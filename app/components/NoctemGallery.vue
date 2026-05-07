@@ -11,13 +11,22 @@
         <div class="noctem-gallery__line line-draw" style="animation-delay: 0.3s" />
       </div>
 
-      <div class="noctem-gallery__grid">
+      <div v-if="pending" class="noctem-gallery__loading">
+        <span class="noctem-gallery__loading-text">Cargando...</span>
+      </div>
+
+      <div v-else-if="error" class="noctem-gallery__error">
+        <span class="noctem-gallery__error-text">No se pudieron cargar los trabajos</span>
+      </div>
+
+      <div v-else class="noctem-gallery__grid">
         <article
           v-for="(item, index) in galleryItems"
-          :key="index"
+          :key="item.id || index"
           class="noctem-gallery__item"
           :class="item.class"
           :style="{ animationDelay: `${0.4 + index * 0.1}s` }"
+          @click="$router.push(`/trabajos/${item.slug}`)"
         >
           <div class="noctem-gallery__image-wrap">
             <img
@@ -40,56 +49,39 @@
 </template>
 
 <script setup lang="ts">
-const galleryItems = [
-  {
-    image: "/assets/images/4x/Recurso 2IDENTIDAD_NOCTEM.png",
-    alt: "Retrato en sombras",
-    name: "Sombras y Luz",
-    category: "Retrato",
-    kanji: "影",
-    class: "",
-  },
-  {
-    image: "/assets/images/4x/Recurso 3IDENTIDAD_NOCTEM.png",
-    alt: "Paisaje de Mallorca",
-    name: "Silencio en la Serra",
-    category: "Paisaje",
-    kanji: "山",
-    class: "noctem-gallery__item--tall",
-  },
-  {
-    image: "/assets/images/4x/Recurso 4IDENTIDAD_NOCTEM.png",
-    alt: "Detalle arquitectónico",
-    name: "Piedra y Mar",
-    category: "Arquitectura",
-    kanji: "石",
-    class: "",
-  },
-  {
-    image: "/assets/images/4x/Recurso 5IDENTIDAD_NOCTEM.png",
-    alt: "Ambiente mediterráneo",
-    name: "Atardecer Mediterráneo",
-    category: "Editorial",
-    kanji: "暮",
-    class: "noctem-gallery__item--wide",
-  },
-  {
-    image: "/assets/images/4x/Recurso 6IDENTIDAD_NOCTEM.png",
-    alt: "Momento íntimo",
-    name: "Intimidad Silenciosa",
-    category: "Bodas",
-    kanji: "静",
-    class: "",
-  },
-  {
-    image: "/assets/images/4x/Recurso 7IDENTIDAD_NOCTEM.png",
-    alt: "Forma abstracta",
-    name: "Forma y Vacío",
-    category: "Arte",
-    kanji: "無",
-    class: "",
-  },
-]
+const config = useRuntimeConfig()
+
+const { data: works, pending, error } = await useFetch('/api/works', {
+  transform: (response: any) => {
+    const arr = response.data || []
+    return arr.map((work: any) => ({
+      id: work.id,
+      image: work.image,
+      images: work.images,
+      alt: work.title,
+      name: work.title,
+      slug: work.slug,
+      category: work.tags?.[0] || work.slug,
+      kanji: '',
+      class: ''
+    }))
+  }
+})
+
+interface Work {
+  id: number
+  image: string
+  alt: string
+  name: string
+  category: string
+  kanji?: string
+  class?: string
+}
+
+const galleryItems = computed<Work[]>(() => {
+  if (!works.value) return []
+  return works.value as Work[]
+})
 </script>
 
 <style scoped>
@@ -201,6 +193,16 @@ const galleryItems = [
   position: relative;
   opacity: 0;
   animation: fadeUp 1s var(--ease-out-expo) forwards;
+  display: flex;
+  flex-direction: column;
+}
+
+.noctem-gallery__item > .noctem-gallery__image-wrap {
+  flex-shrink: 0;
+}
+
+.noctem-gallery__item > .noctem-gallery__info {
+  flex: 1;
 }
 
 .noctem-gallery__item::before {
@@ -225,18 +227,28 @@ const galleryItems = [
   .noctem-gallery__item--wide {
     grid-column: span 2;
   }
+
+  .noctem-gallery__item--wide .noctem-gallery__image-wrap {
+    aspect-ratio: 16 / 9;
+  }
 }
 
 .noctem-gallery__image-wrap {
   position: relative;
   overflow: hidden;
   background-color: var(--color-black-soft);
+  aspect-ratio: 4 / 3;
+}
+
+.noctem-gallery__item--tall .noctem-gallery__image-wrap {
+  aspect-ratio: 3 / 4;
 }
 
 .noctem-gallery__image {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
   filter: grayscale(30%) brightness(0.9);
   transition: transform 0.8s var(--ease-out-expo), filter 0.8s var(--ease-out-expo);
   animation: scaleIn 1.2s var(--ease-out-expo) forwards;
@@ -281,7 +293,7 @@ const galleryItems = [
 }
 
 .noctem-gallery__info {
-  padding: 1.25rem 0;
+  padding: 1.5rem 1.25rem;
 }
 
 .noctem-gallery__name {
@@ -302,5 +314,21 @@ const galleryItems = [
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--color-gray-warm);
+}
+
+.noctem-gallery__loading,
+.noctem-gallery__error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+}
+
+.noctem-gallery__loading-text,
+.noctem-gallery__error-text {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--color-gray-warm);
+  letter-spacing: 0.1em;
 }
 </style>

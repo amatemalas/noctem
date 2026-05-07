@@ -46,7 +46,7 @@ const setupThreeJS = () => {
     0.1,
     1000
   )
-  camera.position.set(0, -1.2, 5)
+  camera.position.set(0, 0.7, 5)
 
   // Renderer
   renderer = new THREE.WebGLRenderer({
@@ -185,7 +185,7 @@ const setupScrollAnimation = () => {
       ease: 'none',
     }, 0)
     .to(lensModel.position, {
-      y: -1.1,
+      y: 0.9,
       ease: 'none',
     }, 0)
 }

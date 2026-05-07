@@ -76,6 +76,7 @@ const heroRef = ref<HTMLElement>(null)
   position: relative;
   z-index: 10;
   text-align: center;
+  margin-bottom: 5rem;
 }
 
 .noctem-hero__subtitle {
