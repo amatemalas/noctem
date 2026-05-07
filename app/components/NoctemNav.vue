@@ -47,7 +47,7 @@ const menuOpen = ref(false)
 
 onMounted(() => {
   window.addEventListener("scroll", () => {
-    isScrolled.value = window.scrollY > 80
+    isScrolled.value = window.scrollY > 1000
   })
 })
 </script>
