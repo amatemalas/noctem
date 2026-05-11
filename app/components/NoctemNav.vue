@@ -4,7 +4,7 @@
     :class="{ 'noctem-nav--scrolled': isScrolled }"
   >
     <div class="noctem-nav__container">
-      <a href="#" class="noctem-nav__logo">
+      <a href="/" @click.prevent="$router.push('/')" class="noctem-nav__logo">
         <span class="noctem-nav__logo-text font-display">
           <img width="150" src="/assets/images/4x/Recurso 1IDENTIDAD_NOCTEM.png" alt="Noctem">
         </span>
@@ -213,8 +213,11 @@ onMounted(() => {
 }
 
 .noctem-nav__mobile {
-  position: fixed;
-  inset: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
   background-color: var(--color-black-deep);
   display: flex;
   align-items: center;

@@ -9,7 +9,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 import gsap from 'gsap'
@@ -31,6 +31,7 @@ let camera: THREE.PerspectiveCamera
 let renderer: THREE.WebGLRenderer
 let lensModel: THREE.Group | null = null
 let animationFrameId: number
+let isVisible = ref(true)
 
 const setupThreeJS = () => {
   if (!threejsCanvas.value) return
@@ -48,16 +49,20 @@ const setupThreeJS = () => {
   )
   camera.position.set(0, 0.7, 5)
 
-  // Renderer
+  // Renderer - optimized for low-power devices
   renderer = new THREE.WebGLRenderer({
     canvas: threejsCanvas.value,
-    antialias: true,
+    antialias: false,
     alpha: true,
+    powerPreference: 'low-power',
+    failIfMajorPerformanceCaveat: false,
   })
   renderer.setClearColor(0x000000, 0)
   renderer.setSize(threejsCanvas.value.clientWidth, threejsCanvas.value.clientHeight)
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5))
   renderer.shadowMap.enabled = false
+  renderer.outputColorSpace = THREE.SRGBColorSpace
+  renderer.info.autoReset = false
 
   // Lighting
   const ambientLight = new THREE.AmbientLight(0xffffff, 0.6)
@@ -130,11 +135,13 @@ const setupThreeJS = () => {
   }
   )
 
-  // Animation loop
+  // Animation loop - only render when visible
   const animate = () => {
     animationFrameId = requestAnimationFrame(animate)
 
+    if (isVisible.value && scene && camera && renderer) {
       renderer.render(scene, camera)
+    }
   }
   animate()
 
@@ -151,8 +158,30 @@ const setupThreeJS = () => {
 
   window.addEventListener('resize', handleResize)
 
+  // Intersection Observer - pause rendering when not visible
+  let observer: IntersectionObserver
+  if (props.triggerElement) {
+    observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          isVisible.value = entry.isIntersecting
+        })
+      },
+      { threshold: 0.1 }
+    )
+    observer.observe(props.triggerElement)
+  }
+
+  // Page visibility API - pause when tab hidden
+  const handleVisibilityChange = () => {
+    isVisible.value = !document.hidden
+  }
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+
   return () => {
     window.removeEventListener('resize', handleResize)
+    document.removeEventListener('visibilitychange', handleVisibilityChange)
+    if (observer) observer.disconnect()
     cancelAnimationFrame(animationFrameId)
     renderer.dispose()
   }

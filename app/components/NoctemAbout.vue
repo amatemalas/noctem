@@ -5,7 +5,7 @@
     
     <div class="noctem-about__container">
       <div class="noctem-about__grid">
-        <div class="noctem-about__visual">
+        <div class="noctem-about__visual" data-aos="fade-up" data-aos-delay="100">
           <div class="noctem-about__image-wrapper">
             <div class="noctem-about__image-border" />
             <img
@@ -19,29 +19,29 @@
           </div>
         </div>
 
-        <div class="noctem-about__content">
-          <span class="noctem-about__label fade-up">Nosotros</span>
+        <div class="noctem-about__content" data-aos="fade-up" data-aos-delay="200">
+          <span class="noctem-about__label" data-aos="fade-up">Nosotros</span>
 
           <h2 class="noctem-about__title">
-            <span class="fade-up" style="animation-delay: 0.15s">El arte de</span>
-            <span class="noctem-about__title-accent fade-up" style="animation-delay: 0.25s">ver</span>
+            <span data-aos="fade-up" data-aos-delay="150">El arte de</span>
+            <span class="noctem-about__title-accent" data-aos="fade-up" data-aos-delay="250">ver</span>
           </h2>
 
-          <div class="noctem-about__line line-draw" style="animation-delay: 0.4s" />
+          <div class="noctem-about__line" data-aos="fade-up" data-aos-delay="400" />
 
-          <div class="noctem-about__text">
-            <p class="fade-up" style="animation-delay: 0.5s">
+          <div class="noctem-about__text" data-aos="fade-up" data-aos-delay="500">
+            <p>
               Nacido en las horas silenciosas entre el atardecer y el amanecer, Noctem es un estudio
               de fotografía enraizado en la belleza salvaje de Mallorca. Nos inspiramos en la filosofía
               japonesa del <em>wabi-sabi</em> — encontrar la perfección en la imperfección, la belleza en lo efímero.
             </p>
-            <p class="fade-up" style="animation-delay: 0.65s">
+            <p>
               Cada encuadre es una meditación. Cada sombra, una historia. No solo capturamos
               momentos — honramos el espacio que ocupan.
             </p>
           </div>
 
-          <div class="noctem-about__stats fade-up" style="animation-delay: 0.8s">
+          <div class="noctem-about__stats" data-aos="fade-up" data-aos-delay="600">
             <div class="noctem-about__stat">
               <span class="noctem-about__stat-number">8+</span>
               <span class="noctem-about__stat-label">Años</span>

@@ -76,7 +76,7 @@ const heroRef = ref<HTMLElement>(null)
   position: relative;
   z-index: 10;
   text-align: center;
-  margin-bottom: 5rem;
+  margin-bottom: 10rem;
 }
 
 .noctem-hero__subtitle {
@@ -101,6 +101,11 @@ const heroRef = ref<HTMLElement>(null)
   .noctem-hero__title {
     font-size: 6rem;
   }
+
+  .noctem-hero__content {
+    margin-bottom: 5em;
+  }
+
 }
 
 @media (min-width: 1024px) {

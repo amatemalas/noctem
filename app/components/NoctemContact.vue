@@ -7,26 +7,26 @@
 
     <div class="noctem-contact__container">
       <div class="noctem-contact__grid">
-        <div class="noctem-contact__info">
-          <span class="noctem-contact__label fade-up">Contacto</span>
+        <div class="noctem-contact__info" data-aos="fade-right">
+          <span class="noctem-contact__label">Contacto</span>
 
           <h2 class="noctem-contact__title">
-            <span class="fade-up" style="animation-delay: 0.15s">Creemos</span>
-            <span class="noctem-contact__title-accent fade-up" style="animation-delay: 0.25s">juntos</span>
+            <span>Creemos&nbsp;</span>
+            <span class="noctem-contact__title-accent">juntos</span>
           </h2>
 
-          <div class="noctem-contact__line line-draw" style="animation-delay: 0.4s" />
+          <div class="noctem-contact__line" />
 
-          <p class="noctem-contact__text fade-up" style="animation-delay: 0.5s">
+          <p class="noctem-contact__text">
             Con base en Mallorca, disponibles en todo el mundo. Aceptamos un número limitado de
             proyectos cada temporada para garantizar la profundidad de atención que cada historia merece.
           </p>
 
-          <div class="noctem-contact__details fade-up" style="animation-delay: 0.65s">
+          <div class="noctem-contact__details">
             <div class="noctem-contact__detail">
               <span class="noctem-contact__detail-label">Email</span>
-              <a href="mailto:hello@noctem.studio" class="noctem-contact__detail-value orange-line-hover">
-                hello@noctem.studio
+              <a href="mailto:mamadouxph@gmail.com" class="noctem-contact__detail-value orange-line-hover">
+                mamadouxph@gmail.com
               </a>
             </div>
             <div class="noctem-contact__detail">
@@ -35,53 +35,154 @@
             </div>
             <div class="noctem-contact__detail">
               <span class="noctem-contact__detail-label">Social</span>
-              <a href="#" class="noctem-contact__detail-value orange-line-hover">@noctem.studio</a>
+              <a href="https://www.instagram.com/noctem.st" target="_blank" class="noctem-contact__detail-value orange-line-hover">@noctem.st</a>
             </div>
           </div>
         </div>
 
-        <div class="noctem-contact__form-wrap">
-          <form class="noctem-contact__form fade-up" style="animation-delay: 0.6s">
+        <div class="noctem-contact__form-wrap" data-aos="fade-left" data-aos-delay="200">
+          <form class="noctem-contact__form" @submit.prevent="handleSubmit">
             <div class="noctem-contact__field">
               <label for="name" class="noctem-contact__label-field">Nombre</label>
               <input
                 id="name"
+                v-model="form.name"
                 type="text"
-                class="noctem-contact__input"
+                :class="['noctem-contact__input', { 'noctem-contact__input--error': errors.name }]"
                 placeholder="Tu nombre"
+                @blur="validateField('name')"
               />
+              <span v-if="errors.name" class="noctem-contact__error">{{ errors.name }}</span>
             </div>
 
             <div class="noctem-contact__field">
               <label for="email" class="noctem-contact__label-field">Email</label>
               <input
                 id="email"
+                v-model="form.email"
                 type="email"
-                class="noctem-contact__input"
+                :class="['noctem-contact__input', { 'noctem-contact__input--error': errors.email }]"
                 placeholder="tu@email.com"
+                @blur="validateField('email')"
               />
+              <span v-if="errors.email" class="noctem-contact__error">{{ errors.email }}</span>
             </div>
 
             <div class="noctem-contact__field">
               <label for="message" class="noctem-contact__label-field">Mensaje</label>
               <textarea
                 id="message"
+                v-model="form.message"
                 rows="5"
-                class="noctem-contact__textarea"
+                :class="['noctem-contact__textarea', { 'noctem-contact__textarea--error': errors.message }]"
                 placeholder="Cuéntanos sobre tu proyecto..."
+                @blur="validateField('message')"
               />
+              <span v-if="errors.message" class="noctem-contact__error">{{ errors.message }}</span>
             </div>
 
-            <button type="submit" class="noctem-contact__submit">
-              <span class="noctem-contact__submit-text">Enviar Mensaje</span>
+            <button type="submit" class="noctem-contact__submit" :disabled="isSubmitting">
+              <span class="noctem-contact__submit-text">{{ isSubmitting ? 'Enviando...' : 'Enviar Mensaje' }}</span>
               <span class="noctem-contact__submit-bg" />
             </button>
+
+            <Transition name="fade">
+              <div v-if="notification" :class="['noctem-contact__notification', `noctem-contact__notification--${notification.type}`]">
+                {{ notification.message }}
+              </div>
+            </Transition>
           </form>
         </div>
       </div>
     </div>
   </section>
 </template>
+
+<script setup>
+import { ref } from 'vue'
+
+const form = ref({
+  name: '',
+  email: '',
+  message: ''
+})
+
+const errors = ref({
+  name: '',
+  email: '',
+  message: ''
+})
+
+const isSubmitting = ref(false)
+const notification = ref(null)
+let notificationTimer = null
+
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+const validateField = (field) => {
+  if (field === 'name') {
+    errors.value.name = form.value.name.trim() ? '' : 'El nombre es obligatorio'
+  }
+  if (field === 'email') {
+    if (!form.value.email.trim()) {
+      errors.value.email = 'El email es obligatorio'
+    } else if (!emailRegex.test(form.value.email)) {
+      errors.value.email = 'Introduce un email válido'
+    } else {
+      errors.value.email = ''
+    }
+  }
+  if (field === 'message') {
+    errors.value.message = form.value.message.trim() ? '' : 'El mensaje es obligatorio'
+  }
+}
+
+const validateForm = () => {
+  validateField('name')
+  validateField('email')
+  validateField('message')
+  return !errors.value.name && !errors.value.email && !errors.value.message
+}
+
+const showNotification = (type, message) => {
+  if (notificationTimer) clearTimeout(notificationTimer)
+  notification.value = { type, message }
+  notificationTimer = setTimeout(() => {
+    notification.value = null
+  }, 5000)
+}
+
+const handleSubmit = async () => {
+  if (isSubmitting.value) return
+
+  if (!validateForm()) {
+    showNotification('error', 'Por favor, completa todos los campos correctamente')
+    return
+  }
+
+  isSubmitting.value = true
+
+  const body = {
+    form_id: 1,
+    content: form.value
+  }
+
+  try {
+    await $fetch('/api/contacts', {
+      method: 'POST',
+      body
+    })
+
+    showNotification('success', 'Mensaje enviado exitosamente')
+    form.value = { name: '', email: '', message: '' }
+    errors.value = { name: '', email: '', message: '' }
+  } catch (error) {
+    showNotification('error', 'Error al enviar el mensaje. Intenta de nuevo.')
+  } finally {
+    isSubmitting.value = false
+  }
+}
+</script>
 
 <style scoped>
 .noctem-contact {
@@ -244,6 +345,7 @@
   font-family: var(--font-display);
   font-size: 1.125rem;
   color: var(--color-cream);
+  width: fit-content;
 }
 
 a.noctem-contact__detail-value {
@@ -311,6 +413,23 @@ a.noctem-contact__detail-value:hover {
   box-shadow: 0 2px 0 var(--color-orange-glow-deep);
 }
 
+.noctem-contact__input--error,
+.noctem-contact__textarea--error {
+  border-color: #f87171;
+}
+
+.noctem-contact__input--error:focus,
+.noctem-contact__textarea--error:focus {
+  box-shadow: 0 2px 0 #f87171;
+}
+
+.noctem-contact__error {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: #f87171;
+  margin-top: 0.25rem;
+}
+
 .noctem-contact__textarea {
   resize: none;
 }
@@ -355,5 +474,36 @@ a.noctem-contact__detail-value:hover {
 
 .noctem-contact__submit:hover .noctem-contact__submit-text {
   color: var(--color-black-deep);
+}
+
+.noctem-contact__notification {
+  padding: 1rem 1.5rem;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  text-align: center;
+  margin-top: 1rem;
+}
+
+.noctem-contact__notification--success {
+  background-color: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  color: #4ade80;
+}
+
+.noctem-contact__notification--error {
+  background-color: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #f87171;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
 }
 </style>

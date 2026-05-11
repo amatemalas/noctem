@@ -3,12 +3,12 @@
     <div class="noctem-gallery__ambient" />
     
     <div class="noctem-gallery__container">
-      <div class="noctem-gallery__header">
-        <span class="noctem-gallery__label fade-up">Portfolio</span>
-        <h2 class="noctem-gallery__title fade-up" style="animation-delay: 0.15s">
+      <div class="noctem-gallery__header" data-aos="fade-up">
+        <span class="noctem-gallery__label">Portfolio</span>
+        <h2 class="noctem-gallery__title">
           Trabajos <span class="noctem-gallery__title-accent">Seleccionados</span>
         </h2>
-        <div class="noctem-gallery__line line-draw" style="animation-delay: 0.3s" />
+        <div class="noctem-gallery__line" />
       </div>
 
       <div v-if="pending" class="noctem-gallery__loading">
@@ -25,7 +25,8 @@
           :key="item.id || index"
           class="noctem-gallery__item"
           :class="item.class"
-          :style="{ animationDelay: `${0.4 + index * 0.1}s` }"
+          data-aos="fade-up"
+          :data-aos-delay="(index % 3) * 100"
           @click="$router.push(`/trabajos/${item.slug}`)"
         >
           <div class="noctem-gallery__image-wrap">
@@ -191,8 +192,6 @@ const galleryItems = computed<Work[]>(() => {
 
 .noctem-gallery__item {
   position: relative;
-  opacity: 0;
-  animation: fadeUp 1s var(--ease-out-expo) forwards;
   display: flex;
   flex-direction: column;
 }
@@ -251,9 +250,6 @@ const galleryItems = computed<Work[]>(() => {
   display: block;
   filter: grayscale(30%) brightness(0.9);
   transition: transform 0.8s var(--ease-out-expo), filter 0.8s var(--ease-out-expo);
-  animation: scaleIn 1.2s var(--ease-out-expo) forwards;
-  animation-delay: 0.2s;
-  opacity: 0;
 }
 
 .noctem-gallery__item:hover .noctem-gallery__image {

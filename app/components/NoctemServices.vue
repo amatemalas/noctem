@@ -3,12 +3,12 @@
     <div class="noctem-services__ambient" />
     
     <div class="noctem-services__container">
-      <div class="noctem-services__header">
-        <span class="noctem-services__label fade-up">Servicios</span>
-        <h2 class="noctem-services__title fade-up" style="animation-delay: 0.15s">
+      <div class="noctem-services__header" data-aos="fade-up">
+        <span class="noctem-services__label">Servicios</span>
+        <h2 class="noctem-services__title">
           Lo que <span class="noctem-services__title-accent">ofrecemos</span>
         </h2>
-        <div class="noctem-services__line line-draw" style="animation-delay: 0.3s" />
+        <div class="noctem-services__line" />
       </div>
 
       <div class="noctem-services__list">
@@ -16,7 +16,8 @@
           v-for="(service, index) in services"
           :key="service.name"
           class="noctem-services__item"
-          :style="{ animationDelay: `${0.4 + index * 0.12}s` }"
+          :data-aos="index % 2 === 0 ? 'fade-left' : 'fade-right'"
+          :data-aos-delay="(index * 100) + 200"
         >
           <span class="noctem-services__number font-jp">{{ service.number }}</span>
           <div class="noctem-services__content">
