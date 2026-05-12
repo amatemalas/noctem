@@ -2,18 +2,17 @@
     <div class="noctem-page">
         <div class="grain-overlay" />
         <NoctemNav />
-        <NoctemHero />
-        <NoctemAbout />
+        <NoctemHero :content="content?.data" />
+        <NoctemAbout :content="content?.data" />
         <NoctemGallery />
-        <NoctemServices />
-        <NoctemContact />
+        <NoctemServices :content="content?.data" />
+        <NoctemContact :content="content?.data" />
         <NoctemFooter />
     </div>
 </template>
 
-<style scoped>
-.noctem-page {
-  background-color: #050505;
-  min-height: 100vh;
-}
-</style>
+<script setup lang="ts">
+import { useNoctemContent } from '~/composables/useNoctemContent'
+
+const { data: content } = await useNoctemContent()
+</script>

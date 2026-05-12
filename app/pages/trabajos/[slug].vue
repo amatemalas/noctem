@@ -33,13 +33,12 @@
               >
                 {{ work.title }}
               </h1>
-              <p 
+              <div 
                 v-if="work.description" 
+                v-html="work.description"
                 class="noctem-work__description fade-up"
                 style="animation-delay: 0.3s"
-              >
-                {{ work.description }}
-              </p>
+              ></div>
               <div 
                 class="noctem-work__line line-draw" 
                 style="animation-delay: 0.45s" 
@@ -134,7 +133,7 @@ const lightboxOpen = ref(false)
 const lightboxIndex = ref(0)
 const isLoaded = ref(false)
 
-const { data: works, pending, error } = await useFetch('/api/works', {
+const { data: works, pending, error } = await useFetch(`${config.public.apiEndpoint}/works`, {
   transform: (response: any) => response.data || []
 })
 

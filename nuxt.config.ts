@@ -13,9 +13,7 @@ export default defineNuxtConfig({
     }
   },
 
-  routeRules: {
-    '/api/**': { proxy: `${apiEndpoint}/**` }
-  },
+  
 
   modules: ['@nuxt/icon', '@nuxt/image', '@nuxt/scripts', '@nuxt/eslint', '@nuxtjs/robots'],
 
