@@ -86,12 +86,14 @@
         />
         <div class="noctem-work__lightbox-content">
           <button 
+            v-if="lightboxOpen"
             class="noctem-work__lightbox-close"
             @click="closeLightbox"
           >
             ×
           </button>
           <button 
+            v-if="lightboxOpen"
             class="noctem-work__lightbox-nav noctem-work__lightbox-nav--prev"
             @click="prevImage"
           >
@@ -109,12 +111,13 @@
             </Transition>
           </div>
           <button 
+            v-if="lightboxOpen"
             class="noctem-work__lightbox-nav noctem-work__lightbox-nav--next"
             @click="nextImage"
           >
             →
           </button>
-          <div class="noctem-work__lightbox-counter">
+          <div v-if="lightboxOpen" class="noctem-work__lightbox-counter">
             {{ lightboxIndex + 1 }} / {{ work.images.length }}
           </div>
         </div>
@@ -127,19 +130,24 @@
 
 <script setup lang="ts">
 const route = useRoute()
-const slug = route.params.slug as string
+const config = useRuntimeConfig()
+const slug = computed(() => route.params.slug as string)
 
 const lightboxOpen = ref(false)
 const lightboxIndex = ref(0)
 const isLoaded = ref(false)
 
-const { data: works, pending, error } = await useFetch(`${config.public.apiEndpoint}/works`, {
+const { data: works, pending, error, refresh } = await useFetch(() => `${config.public.apiEndpoint}/works`, {
   transform: (response: any) => response.data || []
+})
+
+watch(slug, () => {
+  refresh()
 })
 
 const work = computed(() => {
   if (!works.value) return null
-  return works.value.find((w: any) => w.slug === slug)
+  return works.value.find((w: any) => w.slug === slug.value)
 })
 
 onMounted(() => {
@@ -372,17 +380,13 @@ onMounted(() => {
   animation: fadeUp 0.8s var(--ease-out-expo) forwards;
 }
 
-.noctem-work__item--tall {
-  grid-row: span 2;
-}
-
 .noctem-work__item--wide {
-  grid-column: span 2;
+  grid-column: span 1;
 }
 
 @media (min-width: 640px) {
-  .noctem-work__item--wide {
-    grid-column: span 1;
+  .noctem-work__item--tall {
+    grid-row: span 2;
   }
 }
 
@@ -398,26 +402,35 @@ onMounted(() => {
   background-color: var(--color-black-soft);
 }
 
-.noctem-work__item--tall .noctem-work__image-wrap {
-  aspect-ratio: auto;
-  height: 100%;
-  min-height: 400px;
-}
+@media (min-width: 640px) {
+  .noctem-work__item--tall .noctem-work__image-wrap {
+    aspect-ratio: auto;
+    height: 100%;
+    min-height: 400px;
+  }
 
-.noctem-work__item--wide .noctem-work__image-wrap {
-  aspect-ratio: 16/9;
-}
+  .noctem-work__item--wide .noctem-work__image-wrap {
+    aspect-ratio: 16/9;
+  }
 
-.noctem-work__item:not(.noctem-work__item--tall):not(.noctem-work__item--wide) .noctem-work__image-wrap {
-  aspect-ratio: 1;
+  .noctem-work__item:not(.noctem-work__item--tall):not(.noctem-work__item--wide) .noctem-work__image-wrap {
+    aspect-ratio: 1;
+  }
 }
 
 .noctem-work__image {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  height: auto;
+  display: block;
   filter: grayscale(20%) brightness(0.95);
   transition: transform 0.8s var(--ease-out-expo), filter 0.8s var(--ease-out-expo);
+}
+
+@media (min-width: 640px) {
+  .noctem-work__image {
+    height: 100%;
+    object-fit: cover;
+  }
 }
 
 .noctem-work__item:hover .noctem-work__image {

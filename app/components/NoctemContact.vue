@@ -14,9 +14,7 @@
 
           <div class="noctem-contact__line" />
 
-          <p class="noctem-contact__text">
-            {{ content?.contact_description || 'Con base en Mallorca, disponibles en todo el mundo. Aceptamos un número limitado de proyectos cada temporada para garantizar la profundidad de atención que cada historia merece.' }}
-          </p>
+          <div class="noctem-contact__text" v-html="content?.contact_description || 'Con base en Mallorca, disponibles en todo el mundo. Aceptamos un número limitado de proyectos cada temporada para garantizar la profundidad de atención que cada historia merece.'" />
 
           <div class="noctem-contact__details">
             <div class="noctem-contact__detail">

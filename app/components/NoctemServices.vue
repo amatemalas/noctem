@@ -20,7 +20,7 @@
           <span class="noctem-services__number font-jp">{{ service.number }}</span>
           <div class="noctem-services__content">
             <h3 class="noctem-services__name">{{ service.name }}</h3>
-            <p class="noctem-services__description">{{ service.description }}</p>
+            <div class="noctem-services__description" v-html="service.description" />
           </div>
           <span class="noctem-services__arrow">→</span>
         </div>

@@ -27,7 +27,7 @@
           <div class="noctem-about__line" data-aos="fade-up" data-aos-delay="400" />
 
           <div class="noctem-about__text" data-aos="fade-up" data-aos-delay="500">
-            <p v-for="(paragraph, i) in aboutParagraphs" :key="i">{{ paragraph }}</p>
+            <div v-for="(paragraph, i) in aboutParagraphs" :key="i" v-html="paragraph" />
           </div>
 
           <div class="noctem-about__stats" data-aos="fade-up" data-aos-delay="600">
