@@ -10,6 +10,7 @@
 
         <nav class="noctem-footer__nav">
           <a href="#about" class="noctem-footer__link orange-line-hover">Nosotros</a>
+          <a href="#plans" class="noctem-footer__link orange-line-hover">Planes</a>
           <a href="#portfolio" class="noctem-footer__link orange-line-hover">Portfolio</a>
           <a href="#services" class="noctem-footer__link orange-line-hover">Servicios</a>
           <a href="#contact" class="noctem-footer__link orange-line-hover">Contacto</a>

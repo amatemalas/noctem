@@ -1,10 +1,10 @@
 # AGENTS.md
 
 ## Commands
-- `npm run dev` - Start dev server at http://localhost:3000
-- `npm run build` - Production build
-- `npm run preview` - Preview production build locally
-- `npm run generate` - Static site generation
+- `pnpm run dev` - Start dev server at http://localhost:3000
+- `pnpm run build` - Production build
+- `pnpm run preview` - Preview production build locally
+- `pnpm run generate` - Static site generation
 
 ## Project Structure
 - App entrypoint: `app/app.vue` (Nuxt 4 app directory)
@@ -23,6 +23,7 @@
 - tsconfig.json uses project references to `.nuxt/tsconfig.*.json`
 
 ## Default
+- Always use pnpm to avoid security breaches
 - Dev server runs on port 3000
 - Compatibility date: 2025-07-15
 - After every task, do not run the dev server, as the agent task may be frozen by it

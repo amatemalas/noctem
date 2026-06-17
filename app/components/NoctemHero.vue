@@ -225,7 +225,7 @@ const heroRef = ref<HTMLElement>(null)
 
 @media (min-width: 768px) {
   .noctem-hero__content {
-    margin-bottom: 5em;
+    margin-bottom: 7em;
   }
 }
 </style>

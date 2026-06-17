@@ -12,6 +12,7 @@
 
       <nav class="noctem-nav__links">
         <a href="#about" class="noctem-nav__link">Nosotros</a>
+        <a href="#plans" class="noctem-nav__link">Planes</a>
         <a href="#portfolio" class="noctem-nav__link">Portfolio</a>
         <a href="#services" class="noctem-nav__link">Servicios</a>
         <a href="#contact" class="noctem-nav__link noctem-nav__link--cta">Contacto</a>
@@ -32,6 +33,7 @@
       <div v-if="menuOpen" class="noctem-nav__mobile">
         <nav class="noctem-nav__mobile-links">
           <a href="#about" class="noctem-nav__mobile-link" @click="menuOpen = false">Nosotros</a>
+          <a href="#plans" class="noctem-nav__mobile-link" @click="menuOpen = false">Planes</a>
           <a href="#portfolio" class="noctem-nav__mobile-link" @click="menuOpen = false">Portfolio</a>
           <a href="#services" class="noctem-nav__mobile-link" @click="menuOpen = false">Servicios</a>
           <a href="#contact" class="noctem-nav__mobile-link" @click="menuOpen = false">Contacto</a>

@@ -6,6 +6,7 @@
         <NoctemAbout :content="content?.data" />
         <NoctemGallery />
         <NoctemServices :content="content?.data" />
+        <NoctemPlans :content="content?.data" />
         <NoctemContact :content="content?.data" />
         <NoctemFooter />
     </div>

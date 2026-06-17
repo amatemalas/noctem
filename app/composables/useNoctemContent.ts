@@ -1,3 +1,13 @@
+export interface PlanFeature {
+  feature_text: string
+}
+
+export interface PlanCard {
+  plan_title: string
+  plan_description: string
+  plan_features: PlanFeature[]
+}
+
 export interface NoctemContent {
   hero_title: string
   hero_subtitle: string
@@ -16,6 +26,10 @@ export interface NoctemContent {
   service3_description: string
   service4_title: string
   service4_description: string
+  plans_title: string
+  plans_heading: string
+  plans_description: string
+  plans_cards: PlanCard[]
   contact_title: string
   contact_description: string
   contact_email: string
@@ -41,6 +55,54 @@ const defaultContent: NoctemContent = {
   service3_description: 'Narrativa de marca a través de una lente con intención. Moda, producto y lifestyle con precisión editorial.',
   service4_title: 'Impresiones de Arte',
   service4_description: 'Ediciones limitadas de nuestra serie personal. Cada pieza está firmada a mano y numerada en papel de archivo.',
+  plans_title: 'Producción de contenido <strong>audiovisual</strong>',
+  plans_heading: 'Packs mensuales',
+  plans_description: 'Fotografía, vídeo y reels para comunicación digital. Cada pack incluye briefing previo, producción, postproducción y entrega optimizada para redes sociales y web.',
+  plans_cards: [
+    {
+      plan_title: 'Pack Bajo — Contenido Base',
+      plan_description: 'Para negocios que quieren empezar con contenido profesional mensual sin asumir una producción intensiva.',
+      plan_features: [
+        { feature_text: 'Briefing previo al shooting para definir objetivos y prioridades' },
+        { feature_text: '1 shooting mensual de hasta 6 horas' },
+        { feature_text: 'Fotografía profesional y vídeo vertical para redes sociales' },
+        { feature_text: 'Selección y edición de hasta 20 fotografías' },
+        { feature_text: '1 reel vertical editado de 15 a 40 segundos' },
+        { feature_text: '1 reel vertical sencillo optimizado para redes sociales' },
+        { feature_text: 'Grafismos adaptados a la marca: logotipo, textos y subtítulos' },
+        { feature_text: '1 ronda de modificaciones incluida' },
+      ],
+    },
+    {
+      plan_title: 'Pack Normal — Contenido Pro',
+      plan_description: 'Opción recomendada para empresas que necesitan constancia, variedad visual y contenido suficiente para publicar durante el mes.',
+      plan_features: [
+        { feature_text: 'Briefing previo a cada shooting' },
+        { feature_text: '2 shootings mensuales de hasta 6 horas cada uno' },
+        { feature_text: 'Planificación previa de contenidos a grabar' },
+        { feature_text: 'Fotografía profesional y contenido videográfico' },
+        { feature_text: 'Selección y edición de hasta 35 fotografías' },
+        { feature_text: '1 reel vertical editado de 15 a 50 segundos' },
+        { feature_text: '3 reels verticales sencillos optimizados para redes sociales' },
+        { feature_text: 'Grafismos de marca y 1 ronda de modificaciones' },
+      ],
+    },
+    {
+      plan_title: 'Pack Alto — Contenido Premium',
+      plan_description: 'Para marcas que necesitan mayor volumen, más planificación y una imagen mensual más completa.',
+      plan_features: [
+        { feature_text: 'Briefing previo y reunión mensual de planificación creativa' },
+        { feature_text: '2 shootings mensuales de hasta 6 horas cada uno' },
+        { feature_text: 'Fotografía profesional y vídeo con enfoque comercial' },
+        { feature_text: 'Recursos para reels, anuncios, stories, web y comunicación corporativa' },
+        { feature_text: 'Selección y edición de hasta 50 fotografías' },
+        { feature_text: '2 reels verticales editados de 15 a 60 segundos' },
+        { feature_text: '2 reels verticales sencillos optimizados para redes sociales' },
+        { feature_text: 'Mini calendario mensual orientativo de publicación' },
+        { feature_text: '2 rondas de modificaciones incluidas' },
+      ],
+    },
+  ],
   contact_title: 'Creemos <strong>juntos</strong>',
   contact_description: 'Con base en Mallorca, disponibles en todo el mundo. Aceptamos un número limitado de proyectos cada temporada para garantizar la profundidad de atención que cada historia merece.',
   contact_email: 'mamadouxph@gmail.com',
