@@ -33,6 +33,8 @@ let lensModel: THREE.Group | null = null
 let animationFrameId: number
 let isVisible = ref(true)
 
+let cachedScene: THREE.Group | null = null
+
 const setupThreeJS = () => {
   if (!threejsCanvas.value) return
 
@@ -77,18 +79,27 @@ const setupThreeJS = () => {
   pointLight.position.set(-5, 5, 5)
   scene.add(pointLight)
 
-  // Load model
-  const loader = new GLTFLoader()
-  loader.load(
-    '/assets/models/camera_lens.glb',
-    (gltf) => {
-      lensModel = gltf.scene
-      lensModel.scale.set(20, 20, 20)
-      lensModel.position.set(0, 0, 0)
-      lensModel.rotation.y = 0
+  // Load model — use cache if available
+  if (cachedScene) {
+    lensModel = cachedScene.clone(true)
+    lensModel.scale.set(20, 20, 20)
+    lensModel.position.set(0, 0, 0)
+    lensModel.rotation.y = 0
+    scene.add(lensModel)
+    isLoaded.value = true
+    setupScrollAnimation()
+  } else {
+    const loader = new GLTFLoader()
+    loader.load(
+      '/assets/models/camera_lens.glb',
+      (gltf) => {
+        lensModel = gltf.scene
+        lensModel.scale.set(20, 20, 20)
+        lensModel.position.set(0, 0, 0)
+        lensModel.rotation.y = 0
 
-      // Fix transparency issues while preserving textures
-      lensModel.traverse((child) => {
+        // Fix transparency issues while preserving textures
+        lensModel.traverse((child) => {
       if (child instanceof THREE.Mesh && child.material) {
         const materials = Array.isArray(child.material) ? child.material : [child.material]
 
@@ -123,6 +134,8 @@ const setupThreeJS = () => {
       }
     })
 
+    cachedScene = gltf.scene.clone(true)
+
     scene.add(lensModel)
     isLoaded.value = true
 
@@ -133,7 +146,8 @@ const setupThreeJS = () => {
   (error) => {
     console.error('Lens model failed to load', error)
   }
-  )
+    )
+  }
 
   // Animation loop - only render when visible
   const animate = () => {
