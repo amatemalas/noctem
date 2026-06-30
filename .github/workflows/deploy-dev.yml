@@ -33,4 +33,4 @@ jobs:
           username: ${{ secrets.FTP_USERNAME_DEV }}
           password: ${{ secrets.FTP_PASSWORD_DEV }}
           local-dir: ./.output/public/
-          server-dir: /domains/mamadou.adrianmatemalas.me/public_html/   # o la ruta que toque en Hostinger
+          server-dir: /domains/noctem.adrianmatemalas.me/public_html/   # o la ruta que toque en Hostinger
