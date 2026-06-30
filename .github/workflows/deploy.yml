@@ -24,7 +24,8 @@ jobs:
 
       - run: pnpm run generate
         env:
-          NUXT_PUBLIC_API_BASE: ${{ vars.API_BASE_URL }}
+          API_ENDPOINT: ${{ vars.API_ENDPOINT }}
+          INDEXABLE: ${{ vars.INDEXABLE }}
 
       - name: Deploy to Hostinger
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
