@@ -1,7 +1,7 @@
 <template>
   <div class="noctem-work">
     <div class="grain-overlay" />
-    <NoctemNav />
+    <NoctemNav :threshold="0" />
     
     <main class="noctem-work__main">
       <div class="noctem-work__hero">
