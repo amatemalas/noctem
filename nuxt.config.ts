@@ -1,22 +1,29 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 import tailwindcss from '@tailwindcss/vite'
 
+const apiEndpoint = process.env.API_ENDPOINT?.replace(/\/$/, '') || 'http://mamadou-portfolio.test/api'
+
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
 
-  modules: [
-    '@nuxt/icon',
-    '@nuxt/image',
-    '@nuxt/scripts',
-    '@nuxt/eslint'
-  ],
+  runtimeConfig: {
+    public: {
+      apiEndpoint
+    }
+  },
+
+  
+
+  modules: ['@nuxt/icon', '@nuxt/image', '@nuxt/scripts', '@nuxt/eslint', '@nuxtjs/robots'],
 
   css: ["~/assets/css/main.css"],
 
   vitePlugins: [
     tailwindcss()
   ],
+
+  site: { indexable: process.env.INDEXABLE === 'true' },
 
   app: {
     head: {
@@ -27,6 +34,8 @@ export default defineNuxtConfig({
         { name: 'description', content: 'Estudio de fotografía de inspiración japonesa con base en Mallorca. Capturando momentos con precisión y alma.' }
       ],
       link: [
+        { rel: 'icon', type: 'image/png', href: '/assets/images/RECURSOS_IG/ISOTIPO_PERFIL2.png' },
+        { rel: 'apple-touch-icon', href: '/assets/images/RECURSOS_IG/ISOTIPO_PERFIL2.png' },
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
         { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
         { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Noto+Serif+JP:wght@300;400;500&family=Playfair+Display:wght@400;500;600&display=swap' }

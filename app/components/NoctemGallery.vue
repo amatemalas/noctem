@@ -3,21 +3,31 @@
     <div class="noctem-gallery__ambient" />
     
     <div class="noctem-gallery__container">
-      <div class="noctem-gallery__header">
-        <span class="noctem-gallery__label fade-up">Portfolio</span>
-        <h2 class="noctem-gallery__title fade-up" style="animation-delay: 0.15s">
-          Trabajos <span class="noctem-gallery__title-accent">Seleccionados</span>
+      <div class="noctem-gallery__header" data-aos="fade-up">
+        <span class="noctem-gallery__label">Portfolio</span>
+        <h2 class="noctem-gallery__title">
+          <p>Trabajos <strong>Seleccionados</strong></p>
         </h2>
-        <div class="noctem-gallery__line line-draw" style="animation-delay: 0.3s" />
+        <div class="noctem-gallery__line" />
       </div>
 
-      <div class="noctem-gallery__grid">
+      <div v-if="pending" class="noctem-gallery__loading">
+        <span class="noctem-gallery__loading-text">Cargando...</span>
+      </div>
+
+      <div v-else-if="error" class="noctem-gallery__error">
+        <span class="noctem-gallery__error-text">No se pudieron cargar los trabajos</span>
+      </div>
+
+      <div v-else class="noctem-gallery__grid">
         <article
           v-for="(item, index) in galleryItems"
-          :key="index"
+          :key="item.id || index"
           class="noctem-gallery__item"
           :class="item.class"
-          :style="{ animationDelay: `${0.4 + index * 0.1}s` }"
+          data-aos="fade-up"
+          :data-aos-delay="(index % 3) * 100"
+          @click="$router.push(`/trabajos/${item.slug}`)"
         >
           <div class="noctem-gallery__image-wrap">
             <img
@@ -40,267 +50,277 @@
 </template>
 
 <script setup lang="ts">
-const galleryItems = [
-  {
-    image: "/assets/images/4x/Recurso 2IDENTIDAD_NOCTEM.png",
-    alt: "Retrato en sombras",
-    name: "Sombras y Luz",
-    category: "Retrato",
-    kanji: "影",
-    class: "",
-  },
-  {
-    image: "/assets/images/4x/Recurso 3IDENTIDAD_NOCTEM.png",
-    alt: "Paisaje de Mallorca",
-    name: "Silencio en la Serra",
-    category: "Paisaje",
-    kanji: "山",
-    class: "noctem-gallery__item--tall",
-  },
-  {
-    image: "/assets/images/4x/Recurso 4IDENTIDAD_NOCTEM.png",
-    alt: "Detalle arquitectónico",
-    name: "Piedra y Mar",
-    category: "Arquitectura",
-    kanji: "石",
-    class: "",
-  },
-  {
-    image: "/assets/images/4x/Recurso 5IDENTIDAD_NOCTEM.png",
-    alt: "Ambiente mediterráneo",
-    name: "Atardecer Mediterráneo",
-    category: "Editorial",
-    kanji: "暮",
-    class: "noctem-gallery__item--wide",
-  },
-  {
-    image: "/assets/images/4x/Recurso 6IDENTIDAD_NOCTEM.png",
-    alt: "Momento íntimo",
-    name: "Intimidad Silenciosa",
-    category: "Bodas",
-    kanji: "静",
-    class: "",
-  },
-  {
-    image: "/assets/images/4x/Recurso 7IDENTIDAD_NOCTEM.png",
-    alt: "Forma abstracta",
-    name: "Forma y Vacío",
-    category: "Arte",
-    kanji: "無",
-    class: "",
-  },
-]
+const config = useRuntimeConfig()
+
+const { data: works, pending, error } = await useFetch(`${config.public.apiEndpoint}/works`, {
+  transform: (response: any) => {
+    const arr = response.data || []
+    return arr.map((work: any) => ({
+      id: work.id,
+      image: work.image,
+      images: work.images,
+      alt: work.title,
+      name: work.title,
+      slug: work.slug,
+      category: work.tags?.[0] || work.slug,
+      kanji: '',
+      class: ''
+    }))
+  }
+})
+
+interface Work {
+  id: number
+  image: string
+  alt: string
+  name: string
+  category: string
+  kanji?: string
+  class?: string
+}
+
+const galleryItems = computed<Work[]>(() => {
+  if (!works.value) return []
+  return works.value as Work[]
+})
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .noctem-gallery {
   position: relative;
   padding: 8rem 0;
   background-color: var(--color-black-rich);
   overflow: hidden;
-}
 
-.noctem-gallery__ambient {
-  position: absolute;
-  width: 400px;
-  height: 400px;
-  border-radius: 50%;
-  background: radial-gradient(circle, var(--color-orange-glow-xlight) 0%, transparent 70%);
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  animation: breathe 8s ease-in-out infinite;
-  pointer-events: none;
-}
-
-@media (min-width: 1024px) {
-  .noctem-gallery {
+  @media (min-width: 1024px) {
     padding: 11rem 0;
   }
-}
 
-.noctem-gallery__container {
-  max-width: 80rem;
-  margin: 0 auto;
-  padding: 0 1.5rem;
-}
-
-@media (min-width: 1024px) {
-  .noctem-gallery__container {
-    padding: 0 3rem;
+  &__ambient {
+    position: absolute;
+    width: 400px;
+    height: 400px;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--color-orange-glow-xlight) 0%, transparent 70%);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    animation: breathe 8s ease-in-out infinite;
+    pointer-events: none;
   }
-}
 
-.noctem-gallery__header {
-  margin-bottom: 5rem;
-}
+  &__container {
+    max-width: 80rem;
+    margin: 0 auto;
+    padding: 0 1.5rem;
 
-.noctem-gallery__label {
-  display: inline-block;
-  font-family: var(--font-body);
-  font-size: 0.75rem;
-  letter-spacing: 0.35em;
-  text-transform: uppercase;
-  color: var(--color-orange-bulb);
-  margin-bottom: 1.5rem;
-}
-
-.noctem-gallery__title {
-  font-family: var(--font-display);
-  font-size: 3rem;
-  color: var(--color-cream);
-  line-height: 1.05;
-  margin-bottom: 2rem;
-}
-
-@media (min-width: 1024px) {
-  .noctem-gallery__title {
-    font-size: 3.75rem;
+    @media (min-width: 1024px) {
+      padding: 0 3rem;
+    }
   }
-}
 
-@media (min-width: 1280px) {
-  .noctem-gallery__title {
-    font-size: 4.5rem;
+  &__header {
+    margin-bottom: 5rem;
   }
-}
 
-.noctem-gallery__title-accent {
-  font-style: italic;
-  color: var(--color-orange-bulb);
-  text-shadow: 0 0 40px var(--color-orange-glow-strong), 0 0 80px var(--color-orange-glow);
-}
-
-.noctem-gallery__line {
-  height: 1px;
-  background-color: var(--color-orange-glow-strong);
-  max-width: 80px;
-}
-
-.noctem-gallery__grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.5rem;
-}
-
-@media (min-width: 768px) {
-  .noctem-gallery__grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 2rem;
+  &__label {
+    display: inline-block;
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--color-orange-bulb);
+    margin-bottom: 1.5rem;
   }
-}
 
-@media (min-width: 1024px) {
-  .noctem-gallery__grid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 2rem;
+  &__title {
+    font-family: var(--font-display);
+    font-size: 3rem;
+    color: var(--color-cream);
+    line-height: 1.05;
+    margin-bottom: 2rem;
+
+    @media (min-width: 1024px) {
+      font-size: 3.75rem;
+    }
+
+    @media (min-width: 1280px) {
+      font-size: 4.5rem;
+    }
+
+    &-accent {
+      font-style: italic;
+      color: var(--color-orange-bulb);
+      text-shadow: 0 0 40px var(--color-orange-glow-strong), 0 0 80px var(--color-orange-glow);
+    }
+
+    strong {
+      font-style: italic;
+      color: var(--color-orange-bulb);
+      text-shadow: 0 0 40px var(--color-orange-glow-strong), 0 0 80px var(--color-orange-glow);
+    }
+
+    b {
+      font-style: italic;
+      color: var(--color-orange-bulb);
+      text-shadow: 0 0 40px var(--color-orange-glow-strong), 0 0 80px var(--color-orange-glow);
+    }
   }
-}
 
-.noctem-gallery__item {
-  position: relative;
-  opacity: 0;
-  animation: fadeUp 1s var(--ease-out-expo) forwards;
-}
-
-.noctem-gallery__item::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border: 1px solid var(--color-orange-glow-soft);
-  opacity: 0;
-  transition: opacity 0.5s ease;
-  z-index: 10;
-}
-
-.noctem-gallery__item:hover::before {
-  opacity: 1;
-}
-
-.noctem-gallery__item--tall {
-  grid-row: span 2;
-}
-
-@media (min-width: 768px) {
-  .noctem-gallery__item--wide {
-    grid-column: span 2;
+  &__line {
+    height: 1px;
+    background-color: var(--color-orange-glow-strong);
+    max-width: 80px;
   }
-}
 
-.noctem-gallery__image-wrap {
-  position: relative;
-  overflow: hidden;
-  background-color: var(--color-black-soft);
-}
+  &__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
 
-.noctem-gallery__image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  filter: grayscale(30%) brightness(0.9);
-  transition: transform 0.8s var(--ease-out-expo), filter 0.8s var(--ease-out-expo);
-  animation: scaleIn 1.2s var(--ease-out-expo) forwards;
-  animation-delay: 0.2s;
-  opacity: 0;
-}
+    @media (min-width: 768px) {
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+    }
 
-.noctem-gallery__item:hover .noctem-gallery__image {
-  transform: scale(1.05);
-  filter: grayscale(0%) brightness(1);
-}
-
-.noctem-gallery__overlay {
-  position: absolute;
-  inset: 0;
-  background-color: rgba(5, 5, 5, 0.4);
-  opacity: 0;
-  transition: opacity 0.5s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.noctem-gallery__item:hover .noctem-gallery__overlay {
-  opacity: 1;
-}
-
-.noctem-gallery__overlay-kanji {
-  font-family: var(--font-jp);
-  font-size: 4.5rem;
-  color: var(--color-orange-glow-medium);
-}
-
-@media (min-width: 1024px) {
-  .noctem-gallery__overlay-kanji {
-    font-size: 6rem;
+    @media (min-width: 1024px) {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+    }
   }
-}
 
-.noctem-gallery__item:hover .noctem-gallery__overlay-kanji {
-  transform: translateY(0);
-}
+  &__item {
+    position: relative;
+    display: flex;
+    flex-direction: column;
 
-.noctem-gallery__info {
-  padding: 1.25rem 0;
-}
+    & > .noctem-gallery__image-wrap {
+      flex-shrink: 0;
+    }
 
-.noctem-gallery__name {
-  font-family: var(--font-display);
-  font-size: 1.25rem;
-  color: var(--color-cream);
-  margin-bottom: 0.25rem;
-  transition: color 0.5s ease;
-}
+    & > .noctem-gallery__info {
+      flex: 1;
+    }
 
-.noctem-gallery__item:hover .noctem-gallery__name {
-  color: var(--color-orange-bulb);
-}
+    &::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border: 1px solid var(--color-orange-glow-soft);
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      z-index: 10;
+    }
 
-.noctem-gallery__category {
-  font-family: var(--font-body);
-  font-size: 0.75rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--color-gray-warm);
+    &:hover {
+      &::before {
+        opacity: 1;
+      }
+
+      .noctem-gallery__image {
+        transform: scale(1.05);
+        filter: grayscale(0%) brightness(1);
+      }
+
+      .noctem-gallery__overlay {
+        opacity: 1;
+      }
+
+      .noctem-gallery__name {
+        color: var(--color-orange-bulb);
+      }
+    }
+
+    &--tall {
+      grid-row: span 2;
+
+      .noctem-gallery__image-wrap {
+        aspect-ratio: 3 / 4;
+      }
+    }
+
+    &--wide {
+      @media (min-width: 768px) {
+        grid-column: span 2;
+
+        .noctem-gallery__image-wrap {
+          aspect-ratio: 16 / 9;
+        }
+      }
+    }
+  }
+
+  &__image-wrap {
+    position: relative;
+    overflow: hidden;
+    background-color: var(--color-black-soft);
+    aspect-ratio: 4 / 3;
+  }
+
+  &__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    filter: grayscale(30%) brightness(0.9);
+    transition: transform 0.8s var(--ease-out-expo), filter 0.8s var(--ease-out-expo);
+  }
+
+  &__overlay {
+    position: absolute;
+    inset: 0;
+    background-color: rgba(5, 5, 5, 0.4);
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &-kanji {
+      font-family: var(--font-jp);
+      font-size: 4.5rem;
+      color: var(--color-orange-glow-medium);
+
+      @media (min-width: 1024px) {
+        font-size: 6rem;
+      }
+    }
+  }
+
+  &__info {
+    padding: 1.5rem 1.25rem;
+  }
+
+  &__name {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    color: var(--color-cream);
+    margin-bottom: 0.25rem;
+    transition: color 0.5s ease;
+  }
+
+  &__category {
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--color-gray-warm);
+  }
+
+  &__loading,
+  &__error {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+  }
+
+  &__loading-text,
+  &__error-text {
+    font-family: var(--font-body);
+    font-size: 1rem;
+    color: var(--color-gray-warm);
+    letter-spacing: 0.1em;
+  }
 }
 </style>

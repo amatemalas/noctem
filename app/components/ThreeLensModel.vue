@@ -1,9 +1,15 @@
 <template>
-  <canvas ref="threejsCanvas" class="three-lens-model__canvas" />
+  <div class="three-lens-model__wrapper">
+    <canvas ref="threejsCanvas" class="three-lens-model__canvas" />
+
+    <div v-if="!isLoaded" class="three-lens-model__overlay">
+      <div class="three-lens-model__spinner" />
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 import gsap from 'gsap'
@@ -18,12 +24,14 @@ interface Props {
 const props = defineProps<Props>()
 
 const threejsCanvas = ref<HTMLCanvasElement>()
+const isLoaded = ref(false)
 
 let scene: THREE.Scene
 let camera: THREE.PerspectiveCamera
 let renderer: THREE.WebGLRenderer
 let lensModel: THREE.Group | null = null
 let animationFrameId: number
+let isVisible = ref(true)
 
 const setupThreeJS = () => {
   if (!threejsCanvas.value) return
@@ -39,18 +47,22 @@ const setupThreeJS = () => {
     0.1,
     1000
   )
-  camera.position.set(0, -1.2, 5)
+  camera.position.set(0, 0.7, 5)
 
-  // Renderer
+  // Renderer - optimized for low-power devices
   renderer = new THREE.WebGLRenderer({
     canvas: threejsCanvas.value,
-    antialias: true,
+    antialias: false,
     alpha: true,
+    powerPreference: 'low-power',
+    failIfMajorPerformanceCaveat: false,
   })
   renderer.setClearColor(0x000000, 0)
   renderer.setSize(threejsCanvas.value.clientWidth, threejsCanvas.value.clientHeight)
-  renderer.setPixelRatio(window.devicePixelRatio)
-  renderer.shadowMap.enabled = true
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5))
+  renderer.shadowMap.enabled = false
+  renderer.outputColorSpace = THREE.SRGBColorSpace
+  renderer.info.autoReset = false
 
   // Lighting
   const ambientLight = new THREE.AmbientLight(0xffffff, 0.6)
@@ -67,14 +79,16 @@ const setupThreeJS = () => {
 
   // Load model
   const loader = new GLTFLoader()
-  loader.load('/assets/models/camera_lens.glb', (gltf) => {
-    lensModel = gltf.scene
-    lensModel.scale.set(20, 20, 20)
-    lensModel.position.set(0, 0, 0)
-    lensModel.rotation.y = 0
+  loader.load(
+    '/assets/models/camera_lens.glb',
+    (gltf) => {
+      lensModel = gltf.scene
+      lensModel.scale.set(20, 20, 20)
+      lensModel.position.set(0, 0, 0)
+      lensModel.rotation.y = 0
 
-    // Fix transparency issues while preserving textures
-    lensModel.traverse((child) => {
+      // Fix transparency issues while preserving textures
+      lensModel.traverse((child) => {
       if (child instanceof THREE.Mesh && child.material) {
         const materials = Array.isArray(child.material) ? child.material : [child.material]
 
@@ -110,21 +124,24 @@ const setupThreeJS = () => {
     })
 
     scene.add(lensModel)
+    isLoaded.value = true
 
     // Setup scroll animation
     setupScrollAnimation()
-  })
+  },
+  undefined,
+  (error) => {
+    console.error('Lens model failed to load', error)
+  }
+  )
 
-  // Animation loop
+  // Animation loop - only render when visible
   const animate = () => {
     animationFrameId = requestAnimationFrame(animate)
 
-    // Gentle auto-rotation when not scrolling
-    // if (lensModel) {
-    //   lensModel.rotation.z += 0.001
-    // }
-
-    renderer.render(scene, camera)
+    if (isVisible.value && scene && camera && renderer) {
+      renderer.render(scene, camera)
+    }
   }
   animate()
 
@@ -141,8 +158,30 @@ const setupThreeJS = () => {
 
   window.addEventListener('resize', handleResize)
 
+  // Intersection Observer - pause rendering when not visible
+  let observer: IntersectionObserver
+  if (props.triggerElement) {
+    observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          isVisible.value = entry.isIntersecting
+        })
+      },
+      { threshold: 0.1 }
+    )
+    observer.observe(props.triggerElement)
+  }
+
+  // Page visibility API - pause when tab hidden
+  const handleVisibilityChange = () => {
+    isVisible.value = !document.hidden
+  }
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+
   return () => {
     window.removeEventListener('resize', handleResize)
+    document.removeEventListener('visibilitychange', handleVisibilityChange)
+    if (observer) observer.disconnect()
     cancelAnimationFrame(animationFrameId)
     renderer.dispose()
   }
@@ -175,7 +214,7 @@ const setupScrollAnimation = () => {
       ease: 'none',
     }, 0)
     .to(lensModel.position, {
-      y: -1.1,
+      y: 0.9,
       ease: 'none',
     }, 0)
 }
@@ -194,6 +233,11 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+.three-lens-model__wrapper {
+  position: absolute;
+  inset: 0;
+}
+
 .three-lens-model__canvas {
   position: absolute;
   top: 0;
@@ -201,5 +245,28 @@ onUnmounted(() => {
   width: 100%;
   height: 100%;
   z-index: 5;
+}
+
+.three-lens-model__overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(4, 4, 4, 0.18);
+  backdrop-filter: blur(2px);
+  z-index: 10;
+}
+
+.three-lens-model__spinner {
+  width: 2.4rem;
+  height: 2.4rem;
+  border: 3px solid rgba(255, 255, 255, 0.18);
+  border-top-color: rgba(255, 255, 255, 0.85);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 </style>
