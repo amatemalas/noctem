@@ -30,10 +30,19 @@ let scene: THREE.Scene
 let camera: THREE.PerspectiveCamera
 let renderer: THREE.WebGLRenderer
 let lensModel: THREE.Group | null = null
-let animationFrameId: number
 let isVisible = ref(true)
-
 let cachedScene: THREE.Group | null = null
+let renderFrameId: number | null = null
+
+const requestRender = () => {
+  if (renderFrameId !== null) return
+  renderFrameId = requestAnimationFrame(() => {
+    renderFrameId = null
+    if (isVisible.value && scene && camera && renderer) {
+      renderer.render(scene, camera)
+    }
+  })
+}
 
 const setupThreeJS = () => {
   if (!threejsCanvas.value) return
@@ -61,7 +70,8 @@ const setupThreeJS = () => {
   })
   renderer.setClearColor(0x000000, 0)
   renderer.setSize(threejsCanvas.value.clientWidth, threejsCanvas.value.clientHeight)
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5))
+  const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+  renderer.setPixelRatio(isMobile ? 1.0 : Math.min(window.devicePixelRatio, 1.5))
   renderer.shadowMap.enabled = false
   renderer.outputColorSpace = THREE.SRGBColorSpace
   renderer.info.autoReset = false
@@ -72,12 +82,11 @@ const setupThreeJS = () => {
 
   const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8)
   directionalLight.position.set(5, 10, 7)
-  directionalLight.castShadow = true
   scene.add(directionalLight)
 
-  const pointLight = new THREE.PointLight(0xff8c00, 0.5)
-  pointLight.position.set(-5, 5, 5)
-  scene.add(pointLight)
+  const accentLight = new THREE.DirectionalLight(0xff8c00, 0.4)
+  accentLight.position.set(-5, 5, 5)
+  scene.add(accentLight)
 
   // Load model — use cache if available
   if (cachedScene) {
@@ -86,6 +95,7 @@ const setupThreeJS = () => {
     lensModel.position.set(0, 0, 0)
     lensModel.rotation.y = 0
     scene.add(lensModel)
+    renderer.compile(scene, camera)
     isLoaded.value = true
     setupScrollAnimation()
   } else {
@@ -108,35 +118,49 @@ const setupThreeJS = () => {
               material instanceof THREE.MeshPhysicalMaterial ||
               material instanceof THREE.MeshBasicMaterial) {
 
+            let needsUpdate = false
+
             // Fix transparency issues that cause holes/missing parts
             if (material.transparent) {
               // If material is transparent but nearly opaque, make it fully opaque
               if (material.opacity > 0.95) {
                 material.transparent = false
                 material.opacity = 1.0
+                needsUpdate = true
               }
               // If material has very low opacity creating holes, increase it
               else if (material.opacity < 0.1) {
                 material.opacity = 0.9
+                needsUpdate = true
               }
             }
 
             // Ensure proper rendering settings
-            material.depthWrite = true
-            material.side = THREE.FrontSide
-            material.alphaTest = 0.1 // Small alpha test to prevent holes
-            material.needsUpdate = true
+            if (!material.depthWrite) {
+              material.depthWrite = true
+              needsUpdate = true
+            }
+            if (material.side !== THREE.FrontSide) {
+              material.side = THREE.FrontSide
+              needsUpdate = true
+            }
+
+            if (needsUpdate) {
+              material.alphaTest = 0.1
+              material.needsUpdate = true
+            }
           }
         })
-
-        child.castShadow = true
-        child.receiveShadow = true
       }
     })
 
     cachedScene = gltf.scene.clone(true)
 
     scene.add(lensModel)
+
+    // Pre-compile shaders during load to avoid first-render jank
+    renderer.compile(scene, camera)
+
     isLoaded.value = true
 
     // Setup scroll animation
@@ -149,25 +173,23 @@ const setupThreeJS = () => {
     )
   }
 
-  // Animation loop - only render when visible
-  const animate = () => {
-    animationFrameId = requestAnimationFrame(animate)
+  requestRender()
 
-    if (isVisible.value && scene && camera && renderer) {
-      renderer.render(scene, camera)
-    }
-  }
-  animate()
-
-  // Handle resize
+  // Handle resize (throttled)
+  let resizeTimer: number | null = null
   const handleResize = () => {
-    if (threejsCanvas.value) {
-      const width = threejsCanvas.value.clientWidth
-      const height = threejsCanvas.value.clientHeight
-      camera.aspect = width / height
-      camera.updateProjectionMatrix()
-      renderer.setSize(width, height)
-    }
+    if (resizeTimer) cancelAnimationFrame(resizeTimer)
+    resizeTimer = requestAnimationFrame(() => {
+      resizeTimer = null
+      if (threejsCanvas.value) {
+        const width = threejsCanvas.value.clientWidth
+        const height = threejsCanvas.value.clientHeight
+        camera.aspect = width / height
+        camera.updateProjectionMatrix()
+        renderer.setSize(width, height)
+        requestRender()
+      }
+    })
   }
 
   window.addEventListener('resize', handleResize)
@@ -178,7 +200,9 @@ const setupThreeJS = () => {
     observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          isVisible.value = entry.isIntersecting
+          const nowVisible = entry.isIntersecting
+          isVisible.value = nowVisible
+          if (nowVisible) requestRender()
         })
       },
       { threshold: 0.1 }
@@ -188,17 +212,12 @@ const setupThreeJS = () => {
 
   // Page visibility API - pause when tab hidden
   const handleVisibilityChange = () => {
-    isVisible.value = !document.hidden
+    const nowVisible = !document.hidden
+    isVisible.value = nowVisible
+    if (nowVisible) requestRender()
   }
   document.addEventListener('visibilitychange', handleVisibilityChange)
 
-  return () => {
-    window.removeEventListener('resize', handleResize)
-    document.removeEventListener('visibilitychange', handleVisibilityChange)
-    if (observer) observer.disconnect()
-    cancelAnimationFrame(animationFrameId)
-    renderer.dispose()
-  }
 }
 
 const setupScrollAnimation = () => {
@@ -214,6 +233,7 @@ const setupScrollAnimation = () => {
       pinSpacing: true,
       markers: false,
     },
+    onUpdate: requestRender,
   })
 
   tl.to(lensModel.rotation, {
@@ -238,10 +258,8 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  if (renderer) {
-    renderer.dispose()
-  }
-  cancelAnimationFrame(animationFrameId)
+  if (renderFrameId !== null) cancelAnimationFrame(renderFrameId)
+  if (renderer) renderer.dispose()
   ScrollTrigger.getAll().forEach((trigger) => trigger.kill())
 })
 </script>
