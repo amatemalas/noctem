@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.1 (2026-07-01)
+
+### Enhancements
+- **nav**: Scroll threshold for sticky nav to prevent premature sticking
+- **3d**: Lens model caching for improved performance across page navigation
+
 ## 0.1.0 (2026-06-30)
 
 ### Features

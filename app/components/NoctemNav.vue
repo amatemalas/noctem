@@ -44,13 +44,22 @@
 </template>
 
 <script setup lang="ts">
+const { threshold = 1000 } = defineProps<{ threshold?: number }>()
+
 const isScrolled = ref(false)
 const menuOpen = ref(false)
 
+const onScroll = () => {
+  isScrolled.value = window.scrollY > threshold
+}
+
 onMounted(() => {
-  window.addEventListener("scroll", () => {
-    isScrolled.value = window.scrollY > 1000
-  })
+  onScroll()
+  window.addEventListener("scroll", onScroll)
+})
+
+onUnmounted(() => {
+  window.removeEventListener("scroll", onScroll)
 })
 </script>
 
