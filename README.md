@@ -1,75 +1,40 @@
-# Nuxt Minimal Starter
+# Noctem — Estudio de Fotografía Mallorca
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+Web corporativa de **Noctem**, un estudio de fotografía premium con sede en Palma de Mallorca. Especializado en retrato, bodas, editorial y producción de contenido mensual para marcas.
 
-## Setup
+Construida con **Nuxt 4**, **Tailwind CSS v4** y animaciones con **GSAP** / **Three.js**.
 
-Make sure to install dependencies:
+## Stack
 
-```bash
-# npm
-npm install
+| Capa | Tecnología |
+|---|---|
+| Framework | Nuxt 4.4 (Vue 3, TypeScript) |
+| Estilos | Tailwind CSS v4 + SCSS |
+| Animación | GSAP (ScrollTrigger), AnimeJS, AOS |
+| 3D | Three.js con modelo GLTF de lente de cámara |
+| SEO | @nuxt/image, @nuxt/scripts, @nuxtjs/robots |
+| Linting | @nuxt/eslint |
 
-# pnpm
-pnpm install
+## Contenido
 
-# yarn
-yarn install
+- **Hero** con modelo 3D interactivo de lente de cámara
+- **Sobre nosotros** — filosofía *wabi-sabi*, estadísticas del estudio
+- **Galería** — portafolio dinámico conectado a API REST
+- **Servicios** — retrato, bodas, editorial, impresiones de arte
+- **Planes** — packs mensuales de contenido (foto, vídeo, reels)
+- **Contacto** — formulario con validación + envío a API
 
-# bun
-bun install
-```
+El contenido se obtiene desde una API externa con fallback a contenido estático en español.
 
-## Development Server
-
-Start the development server on `http://localhost:3000`:
-
-```bash
-# npm
-npm run dev
-
-# pnpm
-pnpm dev
-
-# yarn
-yarn dev
-
-# bun
-bun run dev
-```
-
-## Production
-
-Build the application for production:
+## Scripts
 
 ```bash
-# npm
-npm run build
-
-# pnpm
-pnpm build
-
-# yarn
-yarn build
-
-# bun
-bun run build
+pnpm run dev          # Servidor de desarrollo → localhost:3000
+pnpm run build        # Build de producción
+pnpm run generate     # Generación estática
+pnpm run preview      # Preview del build
 ```
 
-Locally preview production build:
+## Estilo
 
-```bash
-# npm
-npm run preview
-
-# pnpm
-pnpm preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
-```
-
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+Paleta oscura con acento en dorado/anaranjado (#CC971F), tipografía *Playfair Display* para títulos, *DM Sans* para texto y *Noto Serif JP* para acentos japoneses. Textura de grano SVG superpuesta, scroll suave y animaciones de entrada con fade-up.
