@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.2.0 (2026-07-03)
+
+### Enhancements
+- **3d**: On-demand rendering via `requestRender` — no persistent animation loop, only renders when visible
+- **3d**: Pre-compile shaders with `renderer.compile()` on model load to eliminate first-render jank
+- **3d**: Throttled resize handler using `requestAnimationFrame` instead of direct calls
+- **3d**: Reduced pixel ratio on mobile (1.0) to save GPU resources
+- **3d**: Replaced `PointLight` with `DirectionalLight` for cheaper lighting
+- **3d**: Disabled shadow maps on all directional lights
+- **3d**: Conditional material `needsUpdate` — only flag when properties actually change
+- **3d**: Intelligent caching — cloned cached scene on subsequent navigations to avoid re-parsing GLB
+
 ## 0.1.1 (2026-07-01)
 
 ### Enhancements
