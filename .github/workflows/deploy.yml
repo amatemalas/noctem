@@ -34,4 +34,4 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./.output/public/
-          server-dir: /home/u360029631/domains/noctemstudio.com/public_html/   # o la ruta que toque en Hostinger
+          server-dir: /home/u360029631/domains/noctemst.com/public_html/   # o la ruta que toque en Hostinger
