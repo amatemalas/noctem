@@ -5,20 +5,6 @@
     
     <div class="noctem-about__container">
       <div class="noctem-about__grid">
-        <div class="noctem-about__visual" data-aos="fade-up" data-aos-delay="100">
-          <div class="noctem-about__image-wrapper">
-            <div class="noctem-about__image-border" />
-            <img
-              src="/assets/images/4x/Recurso 1IDENTIDAD_NOCTEM.png"
-              alt="Estudio Noctem"
-              class="noctem-about__image"
-            />
-          </div>
-          <div class="noctem-about__accent">
-            <span class="font-jp text-orange-bulb/30 text-6xl">光</span>
-          </div>
-        </div>
-
         <div class="noctem-about__content" data-aos="fade-up" data-aos-delay="200">
           <span class="noctem-about__label" data-aos="fade-up">{{ content?.about_title || 'Nosotros' }}</span>
 
@@ -47,6 +33,40 @@
             </div>
           </div>
         </div>
+
+        <div class="noctem-about__visual" data-aos="fade-up" data-aos-delay="100">
+          <div class="noctem-about__image-wrapper">
+            <div class="noctem-about__image-border" />
+            <div v-if="images.length" class="noctem-about__swiper">
+              <img
+                v-for="(img, i) in images"
+                :key="i"
+                :src="img.url"
+                :alt="`Estudio Noctem ${i + 1}`"
+                class="noctem-about__image"
+                :class="{ 'noctem-about__image--active': i === activeIndex }"
+              />
+              <div v-if="images.length > 1" class="noctem-about__dots">
+                <button
+                  v-for="(img, i) in images"
+                  :key="i"
+                  class="noctem-about__dot"
+                  :class="{ 'noctem-about__dot--active': i === activeIndex }"
+                  @click="activeIndex = i; resetInterval()"
+                />
+              </div>
+            </div>
+            <img
+              v-else
+              src="/assets/images/4x/Recurso 1IDENTIDAD_NOCTEM.png"
+              alt="Estudio Noctem"
+              class="noctem-about__image noctem-about__image--static"
+            />
+          </div>
+          <div class="noctem-about__accent">
+            <span class="font-jp text-orange-bulb/30 text-6xl">光</span>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -58,15 +78,49 @@ const props = defineProps<{
     about_title?: string
     about_heading?: string
     about_description?: string
+    about_images?: string[]
     stats_years?: string
     stats_projects?: string
     stats_island?: string
   }
 }>()
 
+const images = computed(() => props.content?.about_images || [])
+
 const aboutParagraphs = computed(() => {
   const desc = props.content?.about_description || 'Nacido en las horas silenciosas entre el atardecer y el amanecer, Noctem es un estudio de fotografía enraizado en la belleza salvaje de Mallorca. Nos inspiramos en la filosofía japonesa del <em>wabi-sabi</em> — encontrar la perfección en la imperfección, la belleza en lo efímero.\n\nCada encuadre es una meditación. Cada sombra, una historia. No solo capturamos momentos — honramos el espacio que ocupan.'
   return desc.split('\n\n').filter(Boolean)
+})
+
+const activeIndex = ref(0)
+let intervalId: ReturnType<typeof setInterval> | undefined
+
+function startInterval() {
+  stopInterval()
+  if (images.value.length > 1) {
+    intervalId = setInterval(() => {
+      activeIndex.value = (activeIndex.value + 1) % images.value.length
+    }, 4500)
+  }
+}
+
+function stopInterval() {
+  if (intervalId) {
+    clearInterval(intervalId)
+    intervalId = undefined
+  }
+}
+
+function resetInterval() {
+  startInterval()
+}
+
+onMounted(() => {
+  startInterval()
+})
+
+onUnmounted(() => {
+  stopInterval()
 })
 </script>
 
@@ -143,6 +197,11 @@ const aboutParagraphs = computed(() => {
 
   &__visual {
     position: relative;
+
+    @media (min-width: 1024px) {
+      grid-column: 1;
+      grid-row: 1;
+    }
   }
 
   &__image-wrapper {
@@ -156,7 +215,7 @@ const aboutParagraphs = computed(() => {
       transform: translate(0.75rem, 0.75rem);
     }
 
-    &:hover .noctem-about__image {
+    &:hover .noctem-about__image--active {
       filter: grayscale(0%) contrast(1.05);
     }
   }
@@ -167,17 +226,65 @@ const aboutParagraphs = computed(() => {
     border: 1px solid var(--color-orange-glow-soft);
     transform: translate(1rem, 1rem);
     transition: transform 0.7s var(--ease-out-expo);
+    pointer-events: none;
+  }
+
+  &__swiper {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    overflow: hidden;
   }
 
   &__image {
-    position: relative;
-    z-index: 10;
     width: 100%;
-    height: auto;
+    height: 100%;
     object-fit: cover;
     background-color: var(--color-black-soft);
     filter: grayscale(20%) contrast(1.1);
-    transition: filter 0.7s var(--ease-out-expo);
+    transition: filter 0.7s var(--ease-out-expo), opacity 1.2s var(--ease-out-expo);
+
+    &--active {
+      opacity: 1;
+    }
+
+    &:not(&--active) {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+    }
+
+    &--static {
+      position: relative;
+      display: block;
+      height: auto;
+    }
+  }
+
+  &__dots {
+    position: absolute;
+    bottom: 1.25rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 0.5rem;
+    z-index: 20;
+  }
+
+  &__dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    background: transparent;
+    cursor: pointer;
+    transition: background 0.4s var(--ease-out-expo), border-color 0.4s var(--ease-out-expo);
+    padding: 0;
+
+    &--active {
+      background: var(--color-orange-bulb);
+      border-color: var(--color-orange-bulb);
+    }
   }
 
   &__accent {
@@ -198,6 +305,11 @@ const aboutParagraphs = computed(() => {
 
   &__content {
     position: relative;
+
+    @media (min-width: 1024px) {
+      grid-column: 2;
+      grid-row: 1;
+    }
   }
 
   &__label {

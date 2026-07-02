@@ -14,6 +14,7 @@ export interface NoctemContent {
   about_title: string
   about_heading: string
   about_description: string
+  about_images?: string[]
   stats_years: string
   stats_projects: string
   stats_island: string
