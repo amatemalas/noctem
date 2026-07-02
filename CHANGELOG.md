@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.9.0 (2026-07-02)
+
+### Features
+- **hero**: Background video integration with fallback image for the hero section
+- **seo**: Updated meta description for better search engine visibility
+
+### Infrastructure
+- **ci**: Deploy workflow adjustments for video asset handling
+
 ## 0.2.0 (2026-07-03)
 
 ### Enhancements

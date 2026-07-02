@@ -1,6 +1,8 @@
 <template>
   <section class="noctem-hero" ref="heroRef">
     <div class="noctem-hero__bg">
+      <video ref="videoRef" class="noctem-hero__video" :src="videoSrc" autoplay muted loop playsinline></video>
+      <div class="noctem-hero__video-overlay" />
       <div class="noctem-hero__gradient" />
       <div class="noctem-hero__circle" />
     </div>
@@ -31,6 +33,8 @@ defineProps<{
 }>()
 
 const heroRef = ref<HTMLElement>(null)
+const videoRef = ref<HTMLVideoElement>(null)
+const videoSrc = '/assets/videos/hero-bg.mp4'
 </script>
 
 <style lang="scss" scoped>
@@ -46,6 +50,22 @@ const heroRef = ref<HTMLElement>(null)
   &__bg {
     position: absolute;
     inset: 0;
+  }
+
+  &__video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+  }
+
+  &__video-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: rgba(5, 5, 5, 0.6);
   }
 
   &__gradient {

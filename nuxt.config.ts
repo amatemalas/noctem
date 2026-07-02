@@ -31,7 +31,7 @@ export default defineNuxtConfig({
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-        { name: 'description', content: 'Estudio de fotografía de inspiración japonesa con base en Mallorca. Capturando momentos con precisión y alma.' }
+        { name: 'description', content: 'Noctem Studio nace para marcas, proyectos y personas que quieren comunicar mejor en redes sociales a través de contenido visual con intención.' }
       ],
       link: [
         { rel: 'icon', type: 'image/png', href: '/assets/images/RECURSOS_IG/ISOTIPO_PERFIL2.png' },
