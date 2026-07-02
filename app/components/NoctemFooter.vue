@@ -23,6 +23,9 @@
         <span class="noctem-footer__copy">
           © {{ currentYear }} Noctem Studio. Todos los derechos reservados.
         </span>
+        <div class="noctem-footer__legal">
+          <NuxtLink to="/privacidad" class="noctem-footer__legal-link">Política de Privacidad</NuxtLink>
+        </div>
         <span class="noctem-footer__location">
           Palma de Mallorca
           <span class="font-jp text-orange-bulb/30 mx-2">島</span>
@@ -143,6 +146,24 @@ const currentYear = new Date().getFullYear()
     font-family: var(--font-body);
     font-size: 0.75rem;
     color: rgba(138, 130, 121, 0.5);
+  }
+
+  &__legal {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+
+    &-link {
+      font-family: var(--font-body);
+      font-size: 0.75rem;
+      color: rgba(138, 130, 121, 0.5);
+      text-decoration: none;
+      transition: color 0.3s ease;
+
+      &:hover {
+        color: var(--color-orange-bulb);
+      }
+    }
   }
 
   &__location {

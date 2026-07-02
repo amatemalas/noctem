@@ -75,6 +75,23 @@
               <span v-if="errors.message" class="noctem-contact__error">{{ errors.message }}</span>
             </div>
 
+            <div class="noctem-contact__field">
+              <label class="noctem-contact__checkbox">
+                <input
+                  id="privacy"
+                  v-model="form.privacy"
+                  type="checkbox"
+                  :class="{ 'noctem-contact__checkbox-input--error': errors.privacy }"
+                />
+                <span class="noctem-contact__checkbox-mark" />
+                <span class="noctem-contact__checkbox-label">
+                  He leído y acepto la
+                  <NuxtLink to="/privacidad" target="_blank" class="noctem-contact__checkbox-link">Política de Privacidad</NuxtLink>
+                </span>
+              </label>
+              <span v-if="errors.privacy" class="noctem-contact__error">{{ errors.privacy }}</span>
+            </div>
+
             <button type="submit" class="noctem-contact__submit" :disabled="isSubmitting">
               <span class="noctem-contact__submit-text">{{ isSubmitting ? 'Enviando...' : 'Enviar Mensaje' }}</span>
               <span class="noctem-contact__submit-bg" />
@@ -110,13 +127,15 @@ const props = defineProps<{
 const form = ref({
   name: '',
   email: '',
-  message: ''
+  message: '',
+  privacy: false
 })
 
 const errors = ref({
   name: '',
   email: '',
-  message: ''
+  message: '',
+  privacy: ''
 })
 
 const isSubmitting = ref(false)
@@ -141,13 +160,17 @@ const validateField = (field) => {
   if (field === 'message') {
     errors.value.message = form.value.message.trim() ? '' : 'El mensaje es obligatorio'
   }
+  if (field === 'privacy') {
+    errors.value.privacy = form.value.privacy ? '' : 'Debes aceptar la política de privacidad'
+  }
 }
 
 const validateForm = () => {
   validateField('name')
   validateField('email')
   validateField('message')
-  return !errors.value.name && !errors.value.email && !errors.value.message
+  validateField('privacy')
+  return !errors.value.name && !errors.value.email && !errors.value.message && !errors.value.privacy
 }
 
 const showNotification = (type, message) => {
@@ -170,7 +193,12 @@ const handleSubmit = async () => {
 
   const body = {
     form_id: 1,
-    content: form.value
+    content: {
+      name: form.value.name,
+      email: form.value.email,
+      message: form.value.message,
+      privacy_accepted: true
+    }
   }
 
   try {
@@ -180,8 +208,8 @@ const handleSubmit = async () => {
     })
 
     showNotification('success', 'Mensaje enviado exitosamente')
-    form.value = { name: '', email: '', message: '' }
-    errors.value = { name: '', email: '', message: '' }
+    form.value = { name: '', email: '', message: '', privacy: false }
+    errors.value = { name: '', email: '', message: '', privacy: '' }
   } catch (error) {
     showNotification('error', 'Error al enviar el mensaje. Intenta de nuevo.')
   } finally {
@@ -414,6 +442,72 @@ const handleSubmit = async () => {
 
   &__textarea {
     resize: none;
+  }
+
+  &__checkbox {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    cursor: pointer;
+    user-select: none;
+
+    &-input--error {
+      + .noctem-contact__checkbox-mark {
+        border-color: #f87171;
+      }
+    }
+
+    input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+  }
+
+  &__checkbox-mark {
+    flex-shrink: 0;
+    width: 1.125rem;
+    height: 1.125rem;
+    margin-top: 0.125rem;
+    border: 1px solid var(--color-black-border);
+    background: transparent;
+    position: relative;
+    transition: border-color 0.3s ease, background-color 0.3s ease;
+
+    input:checked + & {
+      background-color: var(--color-orange-bulb);
+      border-color: var(--color-orange-bulb);
+    }
+
+    input:checked + &::after {
+      content: '';
+      position: absolute;
+      top: 45%;
+      left: 50%;
+      width: 0.3rem;
+      height: 0.55rem;
+      border: solid var(--color-black-deep);
+      border-width: 0 2px 2px 0;
+      transform: translate(-50%, -50%) rotate(45deg);
+    }
+  }
+
+  &__checkbox-label {
+    font-family: var(--font-body);
+    font-size: 0.8125rem;
+    color: rgba(196, 189, 181, 0.7);
+    line-height: 1.5;
+    font-weight: 300;
+  }
+
+  &__checkbox-link {
+    color: var(--color-orange-bulb);
+    text-decoration: none;
+    transition: opacity 0.3s ease;
+
+    &:hover {
+      opacity: 0.8;
+    }
   }
 
   &__error {
