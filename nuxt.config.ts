@@ -36,9 +36,7 @@ export default defineNuxtConfig({
       link: [
         { rel: 'icon', type: 'image/png', href: '/assets/images/RECURSOS_IG/ISOTIPO_PERFIL2.png' },
         { rel: 'apple-touch-icon', href: '/assets/images/RECURSOS_IG/ISOTIPO_PERFIL2.png' },
-        { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
-        { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
-        { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Noto+Serif+JP:wght@300;400;500&family=Playfair+Display:wght@400;500;600&display=swap' },
+        { rel: 'stylesheet', href: '/cdn/googlefonts.css' },
         { rel: 'preload', as: 'fetch', href: '/assets/models/camera_lens.glb', crossorigin: '' }
       ]
     }
