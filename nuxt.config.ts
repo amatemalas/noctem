@@ -38,14 +38,14 @@ export default defineNuxtConfig({
         { property: 'og:description', content: 'Noctem Studio nace para marcas, proyectos y personas que quieren comunicar mejor en redes sociales a través de contenido visual con intención.' },
         { property: 'og:type', content: 'website' },
         { property: 'og:url', content: siteUrl },
-        { property: 'og:image', content: `${siteUrl}/assets/images/og-image.png` },
+        { property: 'og:image', content: `/assets/images/og-image.png` },
         { property: 'og:image:width', content: '1200' },
         { property: 'og:image:height', content: '1200' },
         { property: 'og:image:alt', content: 'Noctem - Isotipo' },
         { name: 'twitter:card', content: 'summary' },
         { name: 'twitter:title', content: 'Noctem | Estudio de Fotografía Mallorca' },
         { name: 'twitter:description', content: 'Noctem Studio nace para marcas, proyectos y personas que quieren comunicar mejor en redes sociales a través de contenido visual con intención.' },
-        { name: 'twitter:image', content: `${siteUrl}/assets/images/og-image.png` }
+        { name: 'twitter:image', content: `/assets/images/og-image.png` }
       ],
       link: [
         { rel: 'icon', type: 'image/png', href: '/assets/images/RECURSOS_IG/ISOTIPO_PERFIL2.png' },
