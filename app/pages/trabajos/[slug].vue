@@ -78,6 +78,30 @@
         </div>
       </section>
       
+      <section v-if="work?.videos?.length" class="noctem-work__videos">
+        <div class="noctem-work__videos-container">
+          <div class="noctem-work__videos-grid">
+            <div
+              v-for="(video, index) in work.videos"
+              :key="index"
+              class="noctem-work__video"
+              :style="{ animationDelay: `${0.6 + index * 0.1}s` }"
+            >
+              <div class="noctem-work__video-wrap">
+                <iframe
+                  :src="getYouTubeEmbedUrl(video.url)"
+                  title="YouTube video"
+                  frameborder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowfullscreen
+                  loading="lazy"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section v-if="work?.images?.length > 1" class="noctem-work__lightbox">
         <div 
           class="noctem-work__lightbox-backdrop"
@@ -159,6 +183,17 @@ onMounted(() => {
 const getItemClass = (index: number) => {
   const patterns = ['noctem-work__item--tall', 'noctem-work__item--wide', '', 'noctem-work__item--tall']
   return patterns[index % patterns.length]
+}
+
+const getYouTubeEmbedUrl = (url: string): string => {
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
+  ]
+  for (const pattern of patterns) {
+    const match = url.match(pattern)
+    if (match) return `https://www.youtube.com/embed/${match[1]}`
+  }
+  return url
 }
 
 const openLightbox = (index: number) => {
@@ -468,6 +503,65 @@ onMounted(() => {
 .noctem-work__item:hover .noctem-work__item-icon {
   opacity: 0.8;
   transform: scale(1);
+}
+
+.noctem-work__videos {
+  padding: 0 0 6rem;
+}
+
+.noctem-work__videos-container {
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+@media (min-width: 1024px) {
+  .noctem-work__videos-container {
+    padding: 0 3rem;
+  }
+}
+
+.noctem-work__videos-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 640px) {
+  .noctem-work__videos-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .noctem-work__videos-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+  }
+}
+
+.noctem-work__video {
+  opacity: 0;
+  animation: fadeUp 0.8s var(--ease-out-expo) forwards;
+}
+
+.noctem-work__video-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background-color: var(--color-black-soft);
+  border-radius: 2px;
+}
+
+.noctem-work__video-wrap iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
 }
 
 .noctem-work__lightbox {
