@@ -8,6 +8,12 @@ export interface PlanCard {
   plan_features: PlanFeature[]
 }
 
+export interface ClientLogo {
+  url: string
+  alt?: string
+  file_name?: string
+}
+
 export interface NoctemContent {
   hero_title: string
   hero_subtitle: string
@@ -27,6 +33,9 @@ export interface NoctemContent {
   service3_description: string
   service4_title: string
   service4_description: string
+  clients_title: string
+  clients_heading: string
+  clients_logos?: ClientLogo[]
   plans_title: string
   plans_heading: string
   plans_description: string
@@ -56,6 +65,9 @@ const defaultContent: NoctemContent = {
   service3_description: 'Narrativa de marca a través de una lente con intención. Moda, producto y lifestyle con precisión editorial.',
   service4_title: 'Impresiones de Arte',
   service4_description: 'Ediciones limitadas de nuestra serie personal. Cada pieza está firmada a mano y numerada en papel de archivo.',
+  clients_title: 'Clientes',
+  clients_heading: 'Marcas que <strong>confían</strong> en nosotros',
+  clients_logos: [],
   plans_title: 'Producción de contenido <strong>audiovisual</strong>',
   plans_heading: 'Packs mensuales',
   plans_description: 'Fotografía, vídeo y reels para comunicación digital. Cada pack incluye briefing previo, producción, postproducción y entrega optimizada para redes sociales y web.',

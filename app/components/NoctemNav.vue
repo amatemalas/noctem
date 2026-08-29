@@ -15,6 +15,7 @@
         <a href="#plans" class="noctem-nav__link">Planes</a>
         <a href="#portfolio" class="noctem-nav__link">Portfolio</a>
         <a href="#services" class="noctem-nav__link">Servicios</a>
+        <a href="#clientes" class="noctem-nav__link">Clientes</a>
         <a href="#contact" class="noctem-nav__link noctem-nav__link--cta">Contacto</a>
       </nav>
 
@@ -36,6 +37,7 @@
           <a href="#plans" class="noctem-nav__mobile-link" @click="menuOpen = false">Planes</a>
           <a href="#portfolio" class="noctem-nav__mobile-link" @click="menuOpen = false">Portfolio</a>
           <a href="#services" class="noctem-nav__mobile-link" @click="menuOpen = false">Servicios</a>
+          <a href="#clientes" class="noctem-nav__mobile-link" @click="menuOpen = false">Clientes</a>
           <a href="#contact" class="noctem-nav__mobile-link" @click="menuOpen = false">Contacto</a>
         </nav>
       </div>
@@ -131,7 +133,7 @@ onUnmounted(() => {
     align-items: center;
     gap: 2.5rem;
 
-    @media (min-width: 768px) {
+    @media (min-width: 1024px) {
       display: flex;
     }
   }
@@ -192,7 +194,7 @@ onUnmounted(() => {
     border: none;
     cursor: pointer;
 
-    @media (min-width: 768px) {
+    @media (min-width: 1024px) {
       display: none;
     }
 
