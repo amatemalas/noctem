@@ -2,7 +2,7 @@
 import tailwindcss from '@tailwindcss/vite'
 
 const apiEndpoint = process.env.API_ENDPOINT?.replace(/\/$/, '') || 'http://mamadou-portfolio.test/api'
-const siteUrl = process.env.NUXT_PUBLIC_SITE_URL || 'https://www.mamadousissokho.com'
+const siteUrl = process.env.NUXT_PUBLIC_SITE_URL || 'https://noctemst.com'
 
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
@@ -38,20 +38,20 @@ export default defineNuxtConfig({
         { property: 'og:description', content: 'Noctem Studio nace para marcas, proyectos y personas que quieren comunicar mejor en redes sociales a través de contenido visual con intención.' },
         { property: 'og:type', content: 'website' },
         { property: 'og:url', content: siteUrl },
-        { property: 'og:image', content: `/assets/images/og-image.png` },
+        { property: 'og:image', content: `${siteUrl}/assets/images/og-image.png` },
         { property: 'og:image:width', content: '1200' },
         { property: 'og:image:height', content: '1200' },
         { property: 'og:image:alt', content: 'Noctem - Isotipo' },
         { name: 'twitter:card', content: 'summary' },
         { name: 'twitter:title', content: 'Noctem | Estudio de Fotografía Mallorca' },
         { name: 'twitter:description', content: 'Noctem Studio nace para marcas, proyectos y personas que quieren comunicar mejor en redes sociales a través de contenido visual con intención.' },
-        { name: 'twitter:image', content: `/assets/images/og-image.png` }
+        { name: 'twitter:image', content: `${siteUrl}/assets/images/og-image.png` }
       ],
       link: [
-        { rel: 'icon', type: 'image/png', href: '/assets/images/RECURSOS_IG/ISOTIPO_PERFIL2.png' },
-        { rel: 'apple-touch-icon', href: '/assets/images/RECURSOS_IG/ISOTIPO_PERFIL2.png' },
-        { rel: 'stylesheet', href: '/cdn/googlefonts.css' },
-        { rel: 'preload', as: 'fetch', href: '/assets/models/camera_lens.glb', crossorigin: '' }
+        { rel: 'icon', type: 'image/png', href: `${siteUrl}/assets/images/RECURSOS_IG/ISOTIPO_PERFIL2.png` },
+        { rel: 'apple-touch-icon', href: `${siteUrl}/assets/images/RECURSOS_IG/ISOTIPO_PERFIL2.png` },
+        { rel: 'stylesheet', href: `${siteUrl}/cdn/googlefonts.css` },
+        { rel: 'preload', as: 'fetch', href: `${siteUrl}/assets/models/camera_lens.glb`, crossorigin: '' }
       ]
     }
   }
