@@ -2,7 +2,7 @@ name: Build & Deploy to Hostinger (DEV ring)
 
 on:
   push:
-    branches: [main]
+    branches: [develop]
   workflow_dispatch:
 
 jobs:
