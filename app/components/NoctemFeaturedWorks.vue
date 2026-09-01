@@ -36,8 +36,6 @@
             v-for="item in set"
             :key="item.slug"
             class="noctem-gallery__card"
-            @mouseenter="cardHover(item)"
-            @mouseleave="cardLeave(item)"
             @click="$router.push(`/trabajos/${item.slug}`)"
           >
 <div class="noctem-gallery__media">
@@ -50,26 +48,26 @@
                 />
                 <video
                   v-if="item.isVideoMain"
-                  ref="videoEls"
-                  :data-slug="item.slug"
-                  :src="item.mainVisual"
+                  ref="lazyVideos"
+                  :data-src="item.mainVisual"
                   class="noctem-gallery__video noctem-gallery__video--main"
                   muted
                   loop
                   playsinline
-                  preload="metadata"
+                  autoplay
+                  preload="none"
                   tabindex="-1"
                 />
                 <video
                   v-else-if="item.videoThumb"
-                  ref="videoEls"
-                  :data-slug="item.slug"
-                  :src="item.videoThumb"
+                  ref="lazyVideos"
+                  :data-src="item.videoThumb"
                   class="noctem-gallery__video"
                   muted
                   loop
                   playsinline
-                  preload="metadata"
+                  autoplay
+                  preload="none"
                   tabindex="-1"
                 />
               <div class="noctem-gallery__overlay">
@@ -129,7 +127,7 @@ interface Work {
 
 const galleryItems = computed<Work[]>(() => works.value || [])
 const carouselSets = computed(() => [galleryItems.value, galleryItems.value, galleryItems.value])
-const videoEls = ref<HTMLVideoElement[]>([])
+const lazyVideos = ref<HTMLVideoElement[]>([])
 
 const trackRef = ref<HTMLElement | null>(null)
 const marqueeMove = ref(0)
@@ -140,38 +138,49 @@ const measureMarquee = () => {
   marqueeMove.value = set ? Math.round(set.getBoundingClientRect().width) : 0
 }
 
+let videoObserver: IntersectionObserver | null = null
+
 onMounted(() => {
   measureMarquee()
   window.addEventListener('resize', measureMarquee)
+
+  videoObserver = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      const video = entry.target as HTMLVideoElement
+      if (entry.isIntersecting) {
+        if (!video.src && video.dataset.src) {
+          video.src = video.dataset.src
+        }
+        video.play().catch(() => {})
+      } else {
+        video.pause()
+      }
+    }
+  }, { rootMargin: '200px' })
+
+  for (const video of lazyVideos.value) {
+    videoObserver.observe(video)
+  }
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', measureMarquee)
+  videoObserver?.disconnect()
 })
 
-const videosBySlug = computed(() => {
-  const map: Record<string, HTMLVideoElement> = {}
-  for (const el of videoEls.value) {
-    const slug = el.dataset.slug
-    if (slug) map[slug] = el
+watch(lazyVideos, (newEls, oldEls) => {
+  if (!videoObserver) return
+  if (oldEls) {
+    for (const el of oldEls) {
+      videoObserver.unobserve(el)
+    }
   }
-  return map
+  if (newEls) {
+    for (const el of newEls) {
+      videoObserver.observe(el)
+    }
+  }
 })
-
-const cardHover = (item: Work) => {
-  const video = videosBySlug.value[item.slug]
-  if (!video) return
-  video.muted = true
-  video.play().catch(() => {})
-}
-
-const cardLeave = (item: Work) => {
-  const video = videosBySlug.value[item.slug]
-  if (video) {
-    video.pause()
-    video.currentTime = 0
-  }
-}
 </script>
 
 <style lang="scss" scoped>
@@ -358,10 +367,6 @@ const cardLeave = (item: Work) => {
         filter: grayscale(0%) brightness(1);
       }
 
-      .noctem-gallery__video {
-        opacity: 1;
-      }
-
       .noctem-gallery__overlay {
         opacity: 1;
       }
@@ -374,7 +379,7 @@ const cardLeave = (item: Work) => {
 
   &__media {
     position: relative;
-    aspect-ratio: 4 / 5;
+    aspect-ratio: 3 / 5;
     overflow: hidden;
     background-color: var(--color-black-soft);
   }
@@ -394,12 +399,6 @@ const cardLeave = (item: Work) => {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    opacity: 0;
-    transition: opacity 0.5s ease;
-
-    &--main {
-      opacity: 1;
-    }
   }
 
   &__overlay {

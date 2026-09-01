@@ -61,8 +61,6 @@
               :key="work.slug"
               class="noctem-works__card"
               :style="{ transitionDelay: `${index * 0.03}s` }"
-              @mouseenter="cardHover(work)"
-              @mouseleave="cardLeave(work)"
               @click="goToWork(work.slug)"
             >
               <div class="noctem-works__media">
@@ -75,26 +73,26 @@
                 />
                 <video
                   v-if="work.isVideoMain"
-                  ref="videoEls"
-                  :data-slug="work.slug"
-                  :src="work.mainVisual"
+                  ref="lazyVideos"
+                  :data-src="work.mainVisual"
                   class="noctem-works__video noctem-works__video--main"
                   muted
                   loop
                   playsinline
-                  preload="metadata"
+                  autoplay
+                  preload="none"
                   tabindex="-1"
                 />
                 <video
                   v-else-if="work.videoThumb"
-                  ref="videoEls"
-                  :data-slug="work.slug"
-                  :src="work.videoThumb"
+                  ref="lazyVideos"
+                  :data-src="work.videoThumb"
                   class="noctem-works__video"
                   muted
                   loop
                   playsinline
-                  preload="metadata"
+                  autoplay
+                  preload="none"
                   tabindex="-1"
                 />
               </div>
@@ -116,7 +114,9 @@
 const config = useRuntimeConfig()
 
 const activeTag = ref('')
-const videoEls = ref<HTMLVideoElement[]>([])
+const lazyVideos = ref<HTMLVideoElement[]>([])
+
+let videoObserver: IntersectionObserver | null = null
 
 const { data: works, pending, error } = await useFetch(`${config.public.apiEndpoint}/works`, {
   transform: (response: any) => {
@@ -169,29 +169,43 @@ const filteredWorks = computed(() => {
   return allWorks.value.filter((work) => work.tags.includes(activeTag.value))
 })
 
-const videosBySlug = computed(() => {
-  const map: Record<string, HTMLVideoElement> = {}
-  for (const el of videoEls.value) {
-    const slug = el.dataset.slug
-    if (slug) map[slug] = el
+onMounted(() => {
+  videoObserver = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      const video = entry.target as HTMLVideoElement
+      if (entry.isIntersecting) {
+        if (!video.src && video.dataset.src) {
+          video.src = video.dataset.src
+        }
+        video.play().catch(() => {})
+      } else {
+        video.pause()
+      }
+    }
+  }, { rootMargin: '200px' })
+
+  for (const video of lazyVideos.value) {
+    videoObserver.observe(video)
   }
-  return map
 })
 
-const cardHover = (work: Work) => {
-  const video = videosBySlug.value[work.slug]
-  if (!video) return
-  video.muted = true
-  video.play().catch(() => {})
-}
+onBeforeUnmount(() => {
+  videoObserver?.disconnect()
+})
 
-const cardLeave = (work: Work) => {
-  const video = videosBySlug.value[work.slug]
-  if (video) {
-    video.pause()
-    video.currentTime = 0
+watch(lazyVideos, (newEls, oldEls) => {
+  if (!videoObserver) return
+  if (oldEls) {
+    for (const el of oldEls) {
+      videoObserver.unobserve(el)
+    }
   }
-}
+  if (newEls) {
+    for (const el of newEls) {
+      videoObserver.observe(el)
+    }
+  }
+})
 
 const goToWork = (slug: string) => {
   navigateTo(`/trabajos/${slug}`)
@@ -418,10 +432,6 @@ useHead({
       filter: grayscale(0%) brightness(1);
     }
 
-    .noctem-works__video {
-      opacity: 1;
-    }
-
     .noctem-works__arrow {
       opacity: 1;
       transform: translate(-50%, -50%) scale(1);
@@ -435,7 +445,7 @@ useHead({
 
 .noctem-works__media {
   position: relative;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 3 / 5;
   overflow: hidden;
   background-color: var(--color-black-soft);
 }
@@ -455,12 +465,6 @@ useHead({
   width: 100%;
   height: 100%;
   object-fit: cover;
-  opacity: 0;
-  transition: opacity 0.5s ease;
-
-  &--main {
-    opacity: 1;
-  }
 }
 
 .noctem-works__arrow {

@@ -13,7 +13,6 @@
       <nav class="noctem-nav__links">
         <a href="#about" class="noctem-nav__link">Nosotros</a>
         <a href="#plans" class="noctem-nav__link">Planes</a>
-        <a href="#portfolio" class="noctem-nav__link">Portfolio</a>
         <NuxtLink to="/trabajos" class="noctem-nav__link">Trabajos</NuxtLink>
         <a href="#services" class="noctem-nav__link">Servicios</a>
         <a href="#clientes" class="noctem-nav__link">Clientes</a>
@@ -36,7 +35,6 @@
         <nav class="noctem-nav__mobile-links">
           <a href="#about" class="noctem-nav__mobile-link" @click="menuOpen = false">Nosotros</a>
           <a href="#plans" class="noctem-nav__mobile-link" @click="menuOpen = false">Planes</a>
-          <a href="#portfolio" class="noctem-nav__mobile-link" @click="menuOpen = false">Portfolio</a>
           <NuxtLink to="/trabajos" class="noctem-nav__mobile-link" @click="menuOpen = false">Trabajos</NuxtLink>
           <a href="#services" class="noctem-nav__mobile-link" @click="menuOpen = false">Servicios</a>
           <a href="#clientes" class="noctem-nav__mobile-link" @click="menuOpen = false">Clientes</a>

@@ -61,19 +61,18 @@
               :class="getItemClass(index)"
               :style="{ animationDelay: `${0.6 + index * 0.08}s` }"
               @click="openGallery(index)"
-              @mouseenter="hoverPlay"
-              @mouseleave="hoverPause"
             >
               <div class="noctem-work__image-wrap">
                 <video
                   v-if="item.isVideo"
-                  :src="item.src"
-                  :poster="work.image"
+                  ref="lazyVideos"
+                  :data-src="item.src"
                   class="noctem-work__video-thumb"
                   muted
                   loop
                   playsinline
-                  preload="metadata"
+                  autoplay
+                  preload="none"
                   tabindex="-1"
                 />
                 <img
@@ -131,6 +130,8 @@ const slug = computed(() => route.params.slug as string)
 
 const isLoaded = ref(false)
 const lightboxInstance = ref<ReturnType<typeof lightGallery> | null>(null)
+const lazyVideos = ref<HTMLVideoElement[]>([])
+let videoObserver: IntersectionObserver | null = null
 const isVideoSrc = (src: string): boolean => /\.(mp4|webm|mov|m4v|ogv)$/i.test(src.split('?')[0])
 
 const { data: works, pending, error, refresh } = await useFetch(() => `${config.public.apiEndpoint}/works`, {
@@ -181,6 +182,8 @@ onMounted(() => {
   setTimeout(() => {
     isLoaded.value = true
   }, 100)
+
+  setupVideoObserver()
 })
 
 const getItemClass = (index: number) => {
@@ -199,16 +202,26 @@ const getYouTubeEmbedUrl = (url: string): string => {
   return url
 }
 
-const hoverPlay = (e: MouseEvent) => {
-  const video = (e.currentTarget as HTMLElement).querySelector('video')
-  if (!video) return
-  video.muted = true
-  video.play().catch(() => {})
-}
+const setupVideoObserver = () => {
+  if (!videoObserver && typeof IntersectionObserver !== 'undefined') {
+    videoObserver = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        const video = entry.target as HTMLVideoElement
+        if (entry.isIntersecting) {
+          if (!video.src && video.dataset.src) {
+            video.src = video.dataset.src
+          }
+          video.play().catch(() => {})
+        } else {
+          video.pause()
+        }
+      }
+    }, { rootMargin: '200px' })
 
-const hoverPause = (e: MouseEvent) => {
-  const video = (e.currentTarget as HTMLElement).querySelector('video')
-  video?.pause()
+    for (const video of lazyVideos.value) {
+      videoObserver.observe(video)
+    }
+  }
 }
 
 const getLightbox = async () => {
@@ -258,7 +271,22 @@ onMounted(() => {
   onUnmounted(() => {
     window.removeEventListener('keydown', handleKeydown)
     lightboxInstance.value?.destroy(true)
+    videoObserver?.disconnect()
   })
+})
+
+watch(lazyVideos, (newEls, oldEls) => {
+  if (!videoObserver) return
+  if (oldEls) {
+    for (const el of oldEls) {
+      videoObserver.unobserve(el)
+    }
+  }
+  if (newEls) {
+    for (const el of newEls) {
+      videoObserver.observe(el)
+    }
+  }
 })
 </script>
 
