@@ -73,26 +73,24 @@
                 />
                 <video
                   v-if="work.isVideoMain"
-                  ref="lazyVideos"
-                  :data-src="work.mainVisual"
+                  :src="work.mainVisual"
                   class="noctem-works__video noctem-works__video--main"
                   muted
                   loop
                   playsinline
                   autoplay
-                  preload="none"
+                  preload="metadata"
                   tabindex="-1"
                 />
                 <video
                   v-else-if="work.videoThumb"
-                  ref="lazyVideos"
-                  :data-src="work.videoThumb"
+                  :src="work.videoThumb"
                   class="noctem-works__video"
                   muted
                   loop
                   playsinline
                   autoplay
-                  preload="none"
+                  preload="metadata"
                   tabindex="-1"
                 />
               </div>
@@ -114,9 +112,6 @@
 const config = useRuntimeConfig()
 
 const activeTag = ref('')
-const lazyVideos = ref<HTMLVideoElement[]>([])
-
-let videoObserver: IntersectionObserver | null = null
 
 const { data: works, pending, error } = await useFetch(`${config.public.apiEndpoint}/works`, {
   transform: (response: any) => {
@@ -167,44 +162,6 @@ const allTags = computed(() => {
 const filteredWorks = computed(() => {
   if (!activeTag.value) return allWorks.value
   return allWorks.value.filter((work) => work.tags.includes(activeTag.value))
-})
-
-onMounted(() => {
-  videoObserver = new IntersectionObserver((entries) => {
-    for (const entry of entries) {
-      const video = entry.target as HTMLVideoElement
-      if (entry.isIntersecting) {
-        if (!video.src && video.dataset.src) {
-          video.src = video.dataset.src
-        }
-        video.play().catch(() => {})
-      } else {
-        video.pause()
-      }
-    }
-  }, { rootMargin: '200px' })
-
-  for (const video of lazyVideos.value) {
-    videoObserver.observe(video)
-  }
-})
-
-onBeforeUnmount(() => {
-  videoObserver?.disconnect()
-})
-
-watch(lazyVideos, (newEls, oldEls) => {
-  if (!videoObserver) return
-  if (oldEls) {
-    for (const el of oldEls) {
-      videoObserver.unobserve(el)
-    }
-  }
-  if (newEls) {
-    for (const el of newEls) {
-      videoObserver.observe(el)
-    }
-  }
 })
 
 const goToWork = (slug: string) => {
