@@ -21,7 +21,7 @@ export default defineNuxtConfig({
 
   modules: ['@nuxt/icon', '@nuxt/image', '@nuxt/scripts', '@nuxt/eslint', '@nuxtjs/robots'],
 
-  css: ["~/assets/css/main.css"],
+  css: ["~/assets/css/main.css", "lightgallery/css/lightgallery-bundle.min.css"],
 
   vitePlugins: [
     tailwindcss()

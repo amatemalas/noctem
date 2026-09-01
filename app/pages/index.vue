@@ -4,7 +4,7 @@
         <NoctemNav />
         <NoctemHero :content="content?.data" />
         <NoctemAbout :content="content?.data" />
-        <NoctemGallery />
+        <NoctemFeaturedWorks :content="content?.data" />
         <NoctemServices :content="content?.data" />
         <NoctemClients :content="content?.data" />
         <NoctemPlans :content="content?.data" />

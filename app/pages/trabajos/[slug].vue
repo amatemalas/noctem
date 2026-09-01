@@ -6,7 +6,7 @@
     <main class="noctem-work__main">
       <div class="noctem-work__hero">
         <div class="noctem-work__hero-container">
-          <NuxtLink to="/" class="noctem-work__back">
+          <NuxtLink to="/trabajos" class="noctem-work__back">
             <span class="noctem-work__back-icon">←</span>
             <span class="noctem-work__back-text">Volver</span>
           </NuxtLink>
@@ -48,29 +48,44 @@
         </div>
       </div>
       
-      <section v-if="work?.images?.length" class="noctem-work__gallery">
+      <section v-if="galleryItems.length" class="noctem-work__gallery">
         <div class="noctem-work__gallery-container">
           <div 
             class="noctem-work__masonry"
             :class="{ 'noctem-work__masonry--loaded': isLoaded }"
           >
             <div
-              v-for="(image, index) in work.images"
-              :key="index"
+              v-for="(item, index) in galleryItems"
+              :key="item.key"
               class="noctem-work__item"
               :class="getItemClass(index)"
               :style="{ animationDelay: `${0.6 + index * 0.08}s` }"
-              @click="openLightbox(index)"
+              @click="openGallery(index)"
+              @mouseenter="hoverPlay"
+              @mouseleave="hoverPause"
             >
               <div class="noctem-work__image-wrap">
+                <video
+                  v-if="item.isVideo"
+                  :src="item.src"
+                  :poster="work.image"
+                  class="noctem-work__video-thumb"
+                  muted
+                  loop
+                  playsinline
+                  preload="metadata"
+                  tabindex="-1"
+                />
                 <img
-                  :src="image"
+                  v-else
+                  :src="item.src"
                   :alt="`${work.title} - Imagen ${index + 1}`"
                   class="noctem-work__image"
                   loading="lazy"
                 />
                 <div class="noctem-work__item-overlay">
-                  <span class="noctem-work__item-icon">+</span>
+                  <span v-if="item.isVideo" class="noctem-work__item-play">▶</span>
+                  <span v-else class="noctem-work__item-icon">+</span>
                 </div>
               </div>
             </div>
@@ -101,51 +116,6 @@
           </div>
         </div>
       </section>
-
-      <section v-if="work?.images?.length > 1" class="noctem-work__lightbox">
-        <div 
-          class="noctem-work__lightbox-backdrop"
-          :class="{ 'noctem-work__lightbox-backdrop--active': lightboxOpen }"
-          @click="closeLightbox"
-        />
-        <div class="noctem-work__lightbox-content">
-          <button 
-            v-if="lightboxOpen"
-            class="noctem-work__lightbox-close"
-            @click="closeLightbox"
-          >
-            ×
-          </button>
-          <button 
-            v-if="lightboxOpen"
-            class="noctem-work__lightbox-nav noctem-work__lightbox-nav--prev"
-            @click="prevImage"
-          >
-            ←
-          </button>
-          <div class="noctem-work__lightbox-image-wrap">
-            <Transition name="lightbox">
-              <img
-                v-if="lightboxOpen"
-                :src="work.images[lightboxIndex]"
-                :alt="`${work.title} - Imagen ${lightboxIndex + 1}`"
-                class="noctem-work__lightbox-image"
-                :key="lightboxIndex"
-              />
-            </Transition>
-          </div>
-          <button 
-            v-if="lightboxOpen"
-            class="noctem-work__lightbox-nav noctem-work__lightbox-nav--next"
-            @click="nextImage"
-          >
-            →
-          </button>
-          <div v-if="lightboxOpen" class="noctem-work__lightbox-counter">
-            {{ lightboxIndex + 1 }} / {{ work.images.length }}
-          </div>
-        </div>
-      </section>
     </main>
     
     <NoctemFooter />
@@ -153,13 +123,15 @@
 </template>
 
 <script setup lang="ts">
+import type lightGallery from 'lightgallery'
+
 const route = useRoute()
 const config = useRuntimeConfig()
 const slug = computed(() => route.params.slug as string)
 
-const lightboxOpen = ref(false)
-const lightboxIndex = ref(0)
 const isLoaded = ref(false)
+const lightboxInstance = ref<ReturnType<typeof lightGallery> | null>(null)
+const isVideoSrc = (src: string): boolean => /\.(mp4|webm|mov|m4v|ogv)$/i.test(src.split('?')[0])
 
 const { data: works, pending, error, refresh } = await useFetch(() => `${config.public.apiEndpoint}/works`, {
   transform: (response: any) => response.data || []
@@ -172,6 +144,37 @@ watch(slug, () => {
 const work = computed(() => {
   if (!works.value) return null
   return works.value.find((w: any) => w.slug === slug.value)
+})
+
+const galleryItems = computed(() => {
+  const list = work.value?.images
+  if (!list?.length) return []
+  return list.map((src: string, index: number) => ({
+    src,
+    key: `${index}-${isVideoSrc(src) ? 'v' : 'i'}`,
+    isVideo: isVideoSrc(src)
+  }))
+})
+
+const dynamicItems = computed(() => {
+  const list = work.value?.images
+  if (!list?.length) return []
+  return list.map((src: string) => {
+    if (isVideoSrc(src)) {
+      return {
+        video: {
+          source: [{ src, type: 'video/mp4' }],
+          attributes: { controls: true, playsinline: true, preload: 'metadata' }
+        },
+        downloadUrl: src
+      }
+    }
+    return {
+      src,
+      thumb: src,
+      subHtml: `<h4>${work.value?.title || ''}</h4>`
+    }
+  })
 })
 
 onMounted(() => {
@@ -196,27 +199,46 @@ const getYouTubeEmbedUrl = (url: string): string => {
   return url
 }
 
-const openLightbox = (index: number) => {
-  lightboxIndex.value = index
-  lightboxOpen.value = true
+const hoverPlay = (e: MouseEvent) => {
+  const video = (e.currentTarget as HTMLElement).querySelector('video')
+  if (!video) return
+  video.muted = true
+  video.play().catch(() => {})
 }
 
-const closeLightbox = () => {
-  lightboxOpen.value = false
+const hoverPause = (e: MouseEvent) => {
+  const video = (e.currentTarget as HTMLElement).querySelector('video')
+  video?.pause()
 }
 
-const prevImage = () => {
-  if (!work.value) return
-  lightboxIndex.value = lightboxIndex.value === 0 
-    ? work.value.images.length - 1 
-    : lightboxIndex.value - 1
+const getLightbox = async () => {
+  if (lightboxInstance.value) return lightboxInstance.value
+
+  const [{ default: LightGallery }, { default: videoPlugin }] = await Promise.all([
+    import('lightgallery'),
+    import('lightgallery/plugins/video')
+  ])
+
+  const container = document.createElement('div')
+  document.body.appendChild(container)
+
+  const instance = LightGallery(container, {
+    dynamic: true,
+    plugins: [videoPlugin],
+    dynamicEl: dynamicItems.value,
+    download: false,
+    autoplayFirstVideo: true,
+    autoplayVideoOnSlide: true,
+    actualSize: false
+  })
+
+  lightboxInstance.value = instance
+  return instance
 }
 
-const nextImage = () => {
-  if (!work.value) return
-  lightboxIndex.value = lightboxIndex.value === work.value.images.length - 1 
-    ? 0 
-    : lightboxIndex.value + 1
+const openGallery = async (index: number) => {
+  const gallery = await getLightbox()
+  gallery.openGallery(index)
 }
 
 useHead({
@@ -228,13 +250,15 @@ useHead({
 
 onMounted(() => {
   const handleKeydown = (e: KeyboardEvent) => {
-    if (!lightboxOpen.value) return
-    if (e.key === 'Escape') closeLightbox()
-    if (e.key === 'ArrowLeft') prevImage()
-    if (e.key === 'ArrowRight') nextImage()
+    if (e.key === 'Escape' && lightboxInstance.value) {
+      lightboxInstance.value.closeGallery()
+    }
   }
   window.addEventListener('keydown', handleKeydown)
-  onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
+  onUnmounted(() => {
+    window.removeEventListener('keydown', handleKeydown)
+    lightboxInstance.value?.destroy(true)
+  })
 })
 </script>
 
@@ -453,24 +477,27 @@ onMounted(() => {
   }
 }
 
-.noctem-work__image {
+.noctem-work__image,
+.noctem-work__video-thumb {
   width: 100%;
   height: auto;
   display: block;
-  filter: grayscale(20%) brightness(0.95);
+  filter: grayscale(20%) brightness(0.8);
   transition: transform 0.8s var(--ease-out-expo), filter 0.8s var(--ease-out-expo);
 }
 
 @media (min-width: 640px) {
-  .noctem-work__image {
+  .noctem-work__image,
+  .noctem-work__video-thumb {
     height: 100%;
     object-fit: cover;
   }
 }
 
-.noctem-work__item:hover .noctem-work__image {
+.noctem-work__item:hover .noctem-work__image,
+.noctem-work__item:hover .noctem-work__video-thumb {
   transform: scale(1.05);
-  filter: grayscale(0%) brightness(1.05);
+  filter: grayscale(0%) brightness(1);
 }
 
 .noctem-work__item-overlay {
@@ -490,6 +517,27 @@ onMounted(() => {
 
 .noctem-work__item:hover .noctem-work__item-overlay {
   opacity: 1;
+}
+
+.noctem-work__item-play {
+  font-size: 1.5rem;
+  color: var(--color-cream);
+  opacity: 0;
+  transform: scale(0.5);
+  transition: all 0.5s var(--ease-out-expo);
+  width: 3.5rem;
+  height: 3.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid var(--color-orange-glow-strong);
+  background-color: rgba(5, 5, 5, 0.3);
+}
+
+.noctem-work__item:hover .noctem-work__item-play {
+  opacity: 0.9;
+  transform: scale(1);
 }
 
 .noctem-work__item-icon {
@@ -562,126 +610,5 @@ onMounted(() => {
   width: 100%;
   height: 100%;
   border: none;
-}
-
-.noctem-work__lightbox {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  pointer-events: none;
-}
-
-.noctem-work__lightbox-backdrop {
-  position: absolute;
-  inset: 0;
-  background-color: rgba(5, 5, 5, 0.95);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.5s var(--ease-out-expo);
-}
-
-.noctem-work__lightbox-backdrop--active {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.noctem-work__lightbox-content {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  padding: 3rem;
-}
-
-.noctem-work__lightbox-close {
-  position: absolute;
-  top: 1.5rem;
-  right: 1.5rem;
-  font-size: 2rem;
-  color: var(--color-cream);
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  opacity: 0.6;
-  transition: all 0.3s ease;
-  width: 3rem;
-  height: 3rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.noctem-work__lightbox-close:hover {
-  opacity: 1;
-  color: var(--color-orange-bulb);
-}
-
-.noctem-work__lightbox-nav {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  background: transparent;
-  border: none;
-  color: var(--color-cream);
-  font-size: 1.5rem;
-  cursor: pointer;
-  opacity: 0.5;
-  transition: all 0.3s ease;
-  padding: 1rem;
-}
-
-.noctem-work__lightbox-nav:hover {
-  opacity: 1;
-  color: var(--color-orange-bulb);
-}
-
-.noctem-work__lightbox-nav--prev {
-  left: 1rem;
-}
-
-.noctem-work__lightbox-nav--next {
-  right: 1rem;
-}
-
-.noctem-work__lightbox-image-wrap {
-  position: relative;
-  max-width: 80vw;
-  max-height: 80vh;
-  overflow: hidden;
-}
-
-.noctem-work__lightbox-image {
-  max-width: 100%;
-  max-height: 80vh;
-  object-fit: contain;
-}
-
-.noctem-work__lightbox-counter {
-  position: absolute;
-  bottom: 1rem;
-  left: 50%;
-  transform: translateX(-50%);
-  font-family: var(--font-body);
-  font-size: 0.875rem;
-  letter-spacing: 0.1em;
-  color: var(--color-cream);
-  opacity: 0.6;
-}
-
-.lightbox-enter-active,
-.lightbox-leave-active {
-  transition: all 0.4s var(--ease-out-expo);
-}
-
-.lightbox-enter-from {
-  opacity: 0;
-  transform: scale(0.95);
-}
-
-.lightbox-leave-to {
-  opacity: 0;
-  transform: scale(1.05);
 }
 </style>
