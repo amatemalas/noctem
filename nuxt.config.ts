@@ -2,7 +2,7 @@
 import tailwindcss from '@tailwindcss/vite'
 
 const apiEndpoint = process.env.API_ENDPOINT?.replace(/\/$/, '') || 'http://mamadou-portfolio.test/api'
-const siteUrl = process.env.NUXT_PUBLIC_SITE_URL || 'https://noctemst.com'
+const siteUrl = process.env.NUXT_PUBLIC_SITE_URL || 'https://noctem.adrianmatemalas.me'
 
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
@@ -21,7 +21,7 @@ export default defineNuxtConfig({
 
   modules: ['@nuxt/icon', '@nuxt/image', '@nuxt/scripts', '@nuxt/eslint', '@nuxtjs/robots'],
 
-  css: ["~/assets/css/main.css"],
+  css: ["~/assets/css/main.css", "lightgallery/css/lightgallery-bundle.min.css"],
 
   vitePlugins: [
     tailwindcss()
