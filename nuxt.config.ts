@@ -48,10 +48,10 @@ export default defineNuxtConfig({
         { name: 'twitter:image', content: `${siteUrl}/assets/images/og-image.png` }
       ],
       link: [
-        { rel: 'icon', type: 'image/png', href: `${siteUrl}/assets/images/RECURSOS_IG/ISOTIPO_PERFIL2.png` },
-        { rel: 'apple-touch-icon', href: `${siteUrl}/assets/images/RECURSOS_IG/ISOTIPO_PERFIL2.png` },
-        { rel: 'stylesheet', href: `${siteUrl}/cdn/googlefonts.css` },
-        { rel: 'preload', as: 'fetch', href: `${siteUrl}/assets/models/camera_lens.glb`, crossorigin: '' }
+        { rel: 'icon', type: 'image/png', href: '/assets/images/RECURSOS_IG/ISOTIPO_PERFIL2.png' },
+        { rel: 'apple-touch-icon', href: '/assets/images/RECURSOS_IG/ISOTIPO_PERFIL2.png' },
+        { rel: 'stylesheet', href: '/cdn/googlefonts.css' },
+        { rel: 'preload', as: 'fetch', href: '/assets/models/camera_lens.glb', crossorigin: '' }
       ]
     }
   }
