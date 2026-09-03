@@ -14,18 +14,20 @@
           <NuxtLink to="/trabajos" class="noctem-footer__link orange-line-hover">Trabajos</NuxtLink>
           <a href="#services" class="noctem-footer__link orange-line-hover">Servicios</a>
           <a href="#contact" class="noctem-footer__link orange-line-hover">Contacto</a>
+          <NuxtLink to="/privacidad" class="noctem-footer__link orange-line-hover">Privacidad</NuxtLink>
         </nav>
       </div>
 
       <div class="noctem-footer__divider" />
 
+      <div class="noctem-footer__design text-center">
+        < DEVELOPED BY <a href="https://www.nullweave.dev" target="_blank">NULL WEAVE</a> />
+      </div>
+
       <div class="noctem-footer__bottom">
         <span class="noctem-footer__copy">
           © {{ currentYear }} Noctem Studio. Todos los derechos reservados.
         </span>
-        <div class="noctem-footer__legal">
-          <NuxtLink to="/privacidad" class="noctem-footer__legal-link">Política de Privacidad</NuxtLink>
-        </div>
         <span class="noctem-footer__location">
           Palma de Mallorca
           <span class="font-jp text-orange-bulb/30 mx-2">島</span>
@@ -139,6 +141,25 @@ const currentYear = new Date().getFullYear()
     @media (min-width: 640px) {
       flex-direction: row;
       align-items: center;
+    }
+  }
+
+  &__design {
+    font-family: 'Consolas', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.25em;
+    color: rgba(138, 130, 121, 0.5);
+    text-align: center;
+    margin-bottom: 0.75rem;
+
+    @media (min-width: 640px) {
+      text-align: left;
+    }
+
+    a {
+      color: var(--color-orange-bulb);
+      text-decoration: none;
+      transition: color 0.3s ease;
     }
   }
 
