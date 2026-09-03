@@ -146,8 +146,13 @@ useHead({
   }
 
   &__container {
-    max-width: 48rem;
+    max-width: 80rem;
     margin: 0 auto;
+    padding: 0 1.5rem;
+
+    @media (min-width: 1024px) {
+      padding: 0 3rem;
+    }
   }
 
   &__header {
