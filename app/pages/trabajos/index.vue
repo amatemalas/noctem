@@ -104,6 +104,7 @@
       </template>
     </main>
 
+    <HandwrittenText />
     <NoctemFooter />
   </div>
 </template>
