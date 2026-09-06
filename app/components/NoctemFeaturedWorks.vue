@@ -39,6 +39,7 @@
             @click="$router.push(`/trabajos/${item.slug}`)"
           >
 <div class="noctem-gallery__media">
+                <span v-if="item.mediaType" class="noctem-gallery__media-badge">{{ item.mediaType }}</span>
                 <img
                   v-if="!item.isVideoMain && item.mainVisual"
                   :src="item.mainVisual"
@@ -101,6 +102,12 @@ const { data: works, pending, error } = await useFetch(`${config.public.apiEndpo
     return arr.slice(0, 9).map((work: any) => {
       const images = Array.isArray(work.images) ? work.images : []
       const mainVisual = work.image || images[0] || ''
+      const hasPhoto = images.some((src: string) => !isVideo(src))
+      const hasVideo = images.some(isVideo) || (Array.isArray(work.videos) && work.videos.length > 0)
+      let mediaType = ''
+      if (hasPhoto && hasVideo) mediaType = 'Foto / Vídeo'
+      else if (hasPhoto) mediaType = 'Foto'
+      else if (hasVideo) mediaType = 'Vídeo'
       return {
         id: work.id,
         mainVisual,
@@ -109,7 +116,8 @@ const { data: works, pending, error } = await useFetch(`${config.public.apiEndpo
         alt: work.title,
         name: work.title,
         slug: work.slug,
-        category: work.tags?.[0] || work.slug
+        category: work.tags?.[0] || work.slug,
+        mediaType
       }
     })
   }
@@ -123,6 +131,7 @@ interface Work {
   name: string
   slug: string
   category: string
+  mediaType: string
 }
 
 const galleryItems = computed<Work[]>(() => works.value || [])
@@ -435,6 +444,35 @@ watch(lazyVideos, (newEls, oldEls) => {
     letter-spacing: 0.2em;
     text-transform: uppercase;
     color: var(--color-cream-dim);
+  }
+
+  &__media-badge {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    z-index: 5;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-family: var(--font-body);
+    font-size: 0.625rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--color-orange-bulb);
+    border: 1px solid var(--color-orange-glow-soft);
+    background-color: rgba(5, 5, 5, 0.55);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    padding: 0.25rem 0.5rem;
+
+    &::before {
+      content: "";
+      width: 0.375rem;
+      height: 0.375rem;
+      border-radius: 50%;
+      background-color: var(--color-orange-bulb);
+      box-shadow: 0 0 8px var(--color-orange-glow-strong);
+    }
   }
 
   &__loading,

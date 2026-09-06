@@ -150,7 +150,7 @@ const currentYear = new Date().getFullYear()
     letter-spacing: 0.25em;
     color: rgba(138, 130, 121, 0.5);
     text-align: center;
-    margin-bottom: 0.75rem;
+    margin-bottom: 1.25rem;
 
     @media (min-width: 640px) {
       text-align: left;

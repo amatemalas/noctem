@@ -64,6 +64,7 @@
               @click="goToWork(work.slug)"
             >
               <div class="noctem-works__media">
+                <span v-if="work.mediaType" class="noctem-works__media-badge">{{ work.mediaType }}</span>
                 <img
                   v-if="!work.isVideoMain && work.mainVisual"
                   :src="work.mainVisual"
@@ -121,6 +122,12 @@ const { data: works, pending, error } = await useFetch(`${config.public.apiEndpo
     return arr.map((work: any) => {
       const images = Array.isArray(work.images) ? work.images : []
       const mainVisual = work.image || images[0] || ''
+      const hasPhoto = images.some((src: string) => !isVideo(src))
+      const hasVideo = images.some(isVideo) || (Array.isArray(work.videos) && work.videos.length > 0)
+      let mediaType = ''
+      if (hasPhoto && hasVideo) mediaType = 'Foto / Vídeo'
+      else if (hasPhoto) mediaType = 'Foto'
+      else if (hasVideo) mediaType = 'Vídeo'
       return {
         id: work.id,
         title: work.title,
@@ -129,7 +136,8 @@ const { data: works, pending, error } = await useFetch(`${config.public.apiEndpo
         isVideoMain: !!mainVisual && isVideo(mainVisual),
         videoThumb: images.find(isVideo) || '',
         tags: work.tags || [],
-        category: work.tags?.[0] || work.slug
+        category: work.tags?.[0] || work.slug,
+        mediaType
       }
     })
   }
@@ -144,6 +152,7 @@ interface Work {
   videoThumb: string
   tags: string[]
   category: string
+  mediaType: string
 }
 
 const allWorks = computed<Work[]>(() => works.value || [])
@@ -463,6 +472,35 @@ useHead({
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--color-gray-warm);
+}
+
+.noctem-works__media-badge {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-family: var(--font-body);
+  font-size: 0.625rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-orange-bulb);
+  border: 1px solid var(--color-orange-glow-soft);
+  background-color: rgba(5, 5, 5, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  padding: 0.25rem 0.5rem;
+
+  &::before {
+    content: "";
+    width: 0.375rem;
+    height: 0.375rem;
+    border-radius: 50%;
+    background-color: var(--color-orange-bulb);
+    box-shadow: 0 0 8px var(--color-orange-glow-strong);
+  }
 }
 
 .noctem-works__loading,
