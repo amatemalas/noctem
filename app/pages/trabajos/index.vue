@@ -35,7 +35,7 @@
               @click="activeTag = ''"
             >
               Todos
-              <span class="noctem-works__filter-count">{{ allWorks.length }}</span>
+              <span class="noctem-works__filter-count">{{ total }}</span>
             </button>
             <button
               v-for="tag in allTags"
@@ -57,13 +57,14 @@
             class="noctem-works__grid"
           >
             <article
-              v-for="(work, index) in filteredWorks"
+              v-for="(work, index) in displayedWorks"
               :key="work.slug"
               class="noctem-works__card"
               :style="{ transitionDelay: `${index * 0.03}s` }"
               @click="goToWork(work.slug)"
             >
               <div class="noctem-works__media">
+                <span v-if="work.mediaType" class="noctem-works__media-badge">{{ work.mediaType }}</span>
                 <img
                   v-if="!work.isVideoMain && work.mainVisual"
                   :src="work.mainVisual"
@@ -73,6 +74,7 @@
                 />
                 <video
                   v-if="work.isVideoMain"
+                  :ref="el => registerVideo(el)"
                   :src="work.mainVisual"
                   class="noctem-works__video noctem-works__video--main"
                   muted
@@ -84,6 +86,7 @@
                 />
                 <video
                   v-else-if="work.videoThumb"
+                  :ref="el => registerVideo(el)"
                   :src="work.videoThumb"
                   class="noctem-works__video"
                   muted
@@ -100,6 +103,30 @@
               </div>
             </article>
           </TransitionGroup>
+
+          <div class="noctem-works__load-area">
+            <Transition name="works-loader">
+              <button
+                v-if="hasMore"
+                class="noctem-works__load-more"
+                :disabled="isLoadingMore"
+                @click="loadMore"
+              >
+                <span v-if="isLoadingMore" class="noctem-works__loader">
+                  <span class="noctem-works__loader-dot" />
+                  <span class="noctem-works__loader-dot" />
+                  <span class="noctem-works__loader-dot" />
+                </span>
+                <span v-else class="noctem-works__load-more-text">Cargar más</span>
+              </button>
+            </Transition>
+
+            <div v-if="!hasMore && (currentPage > 1 || total > PER_PAGE)" class="noctem-works__end">
+              <div class="noctem-works__end-line" />
+              <span class="noctem-works__end-text">Todos los trabajos</span>
+              <div class="noctem-works__end-line" />
+            </div>
+          </div>
         </div>
       </template>
     </main>
@@ -112,28 +139,27 @@
 <script setup lang="ts">
 const config = useRuntimeConfig()
 
-const activeTag = ref('')
+const PER_PAGE = 9
 
-const { data: works, pending, error } = await useFetch(`${config.public.apiEndpoint}/works`, {
-  transform: (response: any) => {
-    const isVideo = (src: string): boolean => /\.(mp4|webm|mov|m4v)$/i.test((src || '').split('?')[0])
-    const arr = response.data || []
-    return arr.map((work: any) => {
-      const images = Array.isArray(work.images) ? work.images : []
-      const mainVisual = work.image || images[0] || ''
-      return {
-        id: work.id,
-        title: work.title,
-        slug: work.slug,
-        mainVisual,
-        isVideoMain: !!mainVisual && isVideo(mainVisual),
-        videoThumb: images.find(isVideo) || '',
-        tags: work.tags || [],
-        category: work.tags?.[0] || work.slug
-      }
-    })
+const activeTag = ref('')
+const works = ref<Work[]>([])
+const total = ref(0)
+const lastPage = ref(1)
+const currentPage = ref(0)
+const isLoadingMore = ref(false)
+
+const registerVideo = (el: any) => {
+  if (!el || !(el instanceof HTMLVideoElement)) return
+  const attempt = () => {
+    el.muted = true
+    el.play().catch(() => {})
   }
-})
+  if (el.readyState >= 1) {
+    attempt()
+  } else {
+    el.addEventListener('loadeddata', attempt, { once: true })
+  }
+}
 
 interface Work {
   id: number
@@ -144,13 +170,63 @@ interface Work {
   videoThumb: string
   tags: string[]
   category: string
+  mediaType: string
 }
 
-const allWorks = computed<Work[]>(() => works.value || [])
+const normalizeWork = (work: any): Work => {
+  const isVideo = (src: string): boolean => /\.(mp4|webm|mov|m4v)$/i.test((src || '').split('?')[0])
+  const images = Array.isArray(work.images) ? work.images : []
+  const mainVisual = work.image || images[0] || ''
+  const hasPhoto = images.some((src: string) => !isVideo(src))
+  const hasVideo = images.some(isVideo) || (Array.isArray(work.videos) && work.videos.length > 0)
+  let mediaType = ''
+  if (hasPhoto && hasVideo) mediaType = 'Foto / Vídeo'
+  else if (hasPhoto) mediaType = 'Foto'
+  else if (hasVideo) mediaType = 'Vídeo'
+  return {
+    id: work.id,
+    title: work.title,
+    slug: work.slug,
+    mainVisual,
+    isVideoMain: !!mainVisual && isVideo(mainVisual),
+    videoThumb: images.find(isVideo) || '',
+    tags: work.tags || [],
+    category: work.tags?.[0] || work.slug,
+    mediaType
+  }
+}
+
+const { data: initialPage, pending, error } = await useFetch(`${config.public.apiEndpoint}/works`, {
+  query: {
+    per_page: PER_PAGE,
+    page: 1
+  },
+  transform: (response: any) => {
+    const meta = response.meta || {}
+    return {
+      data: (response.data || []).map(normalizeWork),
+      total: meta.total || 0,
+      lastPage: meta.last_page || 1
+    }
+  }
+})
+
+const displayedWorks = computed(() => works.value)
+
+const hasMore = computed(() => currentPage.value < lastPage.value)
+
+const allWorks = computed(() => works.value)
+
+const { data: tagMeta } = await useFetch(`${config.public.apiEndpoint}/works`, {
+  query: {
+    per_page: 100
+  },
+  transform: (response: any) => (response.data || []).map(normalizeWork)
+})
 
 const allTags = computed(() => {
   const counts = new Map<string, number>()
-  for (const work of allWorks.value) {
+  for (const work of tagMeta.value || []) {
     for (const tag of work.tags) {
       counts.set(tag, (counts.get(tag) || 0) + 1)
     }
@@ -160,10 +236,68 @@ const allTags = computed(() => {
     .sort((a, b) => a.tag.localeCompare(b.tag))
 })
 
-const filteredWorks = computed(() => {
-  if (!activeTag.value) return allWorks.value
-  return allWorks.value.filter((work) => work.tags.includes(activeTag.value))
-})
+const filteredWorks = computed(() => works.value)
+
+const fetchPage = async (page: number, tag: string): Promise<{ data: Work[]; total: number; lastPage: number } | null> => {
+  try {
+    const response = await $fetch(`${config.public.apiEndpoint}/works`, {
+      query: {
+        per_page: PER_PAGE,
+        page,
+        ...(tag ? { tag } : {})
+      }
+    })
+    const meta = (response as any).meta || {}
+    return {
+      data: ((response as any).data || []).map(normalizeWork),
+      total: meta.total || 0,
+      lastPage: meta.last_page || 1
+    }
+  } catch {
+    return null
+  }
+}
+
+const applyFirstPage = (page: { data: Work[]; total: number; lastPage: number } | null | undefined) => {
+  works.value = page?.data || []
+  total.value = page?.total || 0
+  lastPage.value = page?.lastPage || 1
+  currentPage.value = page ? 1 : 0
+}
+
+applyFirstPage(initialPage.value)
+
+let requestSeq = 0
+
+const loadFirstPage = async () => {
+  const seq = ++requestSeq
+  isLoadingMore.value = true
+  const page = await fetchPage(1, activeTag.value)
+  if (seq === requestSeq) {
+    applyFirstPage(page)
+    isLoadingMore.value = false
+  }
+}
+
+watch(activeTag, loadFirstPage)
+
+let loadingInProgress = false
+
+const loadMore = async () => {
+  if (loadingInProgress) return
+  if (!hasMore.value) return
+  loadingInProgress = true
+  isLoadingMore.value = true
+  const page = await fetchPage(currentPage.value + 1, activeTag.value)
+  if (page) {
+    works.value = [...works.value, ...page.data]
+    total.value = page.total
+    lastPage.value = page.lastPage
+    currentPage.value += 1
+  }
+  isLoadingMore.value = false
+  loadingInProgress = false
+}
 
 const goToWork = (slug: string) => {
   navigateTo(`/trabajos/${slug}`)
@@ -465,6 +599,35 @@ useHead({
   color: var(--color-gray-warm);
 }
 
+.noctem-works__media-badge {
+  position: absolute;
+  top: 0.875rem;
+  right: 0.875rem;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-orange-bulb);
+  border: 1px solid var(--color-orange-glow-soft);
+  background-color: rgba(5, 5, 5, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  padding: 0.4rem 0.75rem;
+
+  &::before {
+    content: "";
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background-color: var(--color-orange-bulb);
+    box-shadow: 0 0 8px var(--color-orange-glow-strong);
+  }
+}
+
 .noctem-works__loading,
 .noctem-works__error {
   min-height: 40vh;
@@ -491,5 +654,115 @@ useHead({
 .works-card-leave-to {
   opacity: 0;
   transform: translateY(20px) scale(0.98);
+}
+
+.noctem-works__load-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 3rem 0 1rem;
+}
+
+.noctem-works__load-more {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 3rem;
+  padding: 0 2rem;
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--color-cream);
+  background-color: transparent;
+  border: 1px solid var(--color-orange-glow-soft);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color 0.5s ease, border-color 0.5s ease, background-color 0.5s ease;
+
+  &:hover:not(:disabled) {
+    color: var(--color-orange-bulb);
+    border-color: var(--color-orange-bulb);
+    background-color: var(--color-orange-glow-xlight);
+  }
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.85;
+  }
+}
+
+.noctem-works__load-more-text {
+  white-space: nowrap;
+}
+
+.noctem-works__loader {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.noctem-works__loader-dot {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background-color: var(--color-orange-bulb);
+  box-shadow: 0 0 8px var(--color-orange-glow-strong);
+  animation: loaderDot 1.2s var(--ease-in-out-quart) infinite;
+
+  &:nth-child(2) {
+    animation-delay: 0.15s;
+  }
+
+  &:nth-child(3) {
+    animation-delay: 0.3s;
+  }
+}
+
+@keyframes loaderDot {
+  0%, 60%, 100% {
+    transform: translateY(0);
+    opacity: 0.35;
+  }
+  30% {
+    transform: translateY(-6px);
+    opacity: 1;
+  }
+}
+
+.noctem-works__end {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  padding: 0.5rem 0 1rem;
+}
+
+.noctem-works__end-line {
+  width: 2.5rem;
+  height: 1px;
+  background-color: var(--color-orange-glow-soft);
+}
+
+.noctem-works__end-text {
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--color-gray-warm);
+  opacity: 0.7;
+  white-space: nowrap;
+}
+
+.works-loader-enter-active,
+.works-loader-leave-active {
+  transition: opacity 0.4s var(--ease-out-expo), transform 0.4s var(--ease-out-expo);
+}
+
+.works-loader-enter-from,
+.works-loader-leave-to {
+  opacity: 0;
+  transform: translateY(12px);
 }
 </style>

@@ -135,6 +135,10 @@ let videoObserver: IntersectionObserver | null = null
 const isVideoSrc = (src: string): boolean => /\.(mp4|webm|mov|m4v|ogv)$/i.test(src.split('?')[0])
 
 const { data: works, pending, error, refresh } = await useFetch(() => `${config.public.apiEndpoint}/works`, {
+  query: {
+    slug: slug.value,
+    per_page: 1
+  },
   transform: (response: any) => response.data || []
 })
 
@@ -144,7 +148,7 @@ watch(slug, () => {
 
 const work = computed(() => {
   if (!works.value) return null
-  return works.value.find((w: any) => w.slug === slug.value)
+  return works.value.find((w: any) => w.slug === slug.value) || works.value[0] || null
 })
 
 const galleryItems = computed(() => {
