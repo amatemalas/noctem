@@ -269,25 +269,35 @@ const loadMore = async () => {
 }
 
 onMounted(() => {
-  const sentinel = loadMoreSentinel.value
-  if (!sentinel) return
+  let observer: IntersectionObserver | null = null
 
-  const observer = new IntersectionObserver(
-    (entries) => {
-      if (!entries[0].isIntersecting) return
-      if (hasMore.value && !isLoadingMore.value) {
-        loadMore()
+  const startObserver = () => {
+    const sentinel = loadMoreSentinel.value
+    if (!sentinel) return
+    observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries[0].isIntersecting) return
+        if (hasMore.value && !isLoadingMore.value) {
+          loadMore()
+        }
+      },
+      {
+        rootMargin: '400px 0px',
+        threshold: 0.01
       }
-    },
-    {
-      rootMargin: '400px 0px',
-      threshold: 0.01
+    )
+    observer.observe(sentinel)
+  }
+
+  startObserver()
+
+  watch(loadMoreSentinel, (sentinel) => {
+    if (sentinel) {
+      startObserver()
     }
-  )
+  })
 
-  observer.observe(sentinel)
-
-  onBeforeUnmount(() => observer.disconnect())
+  onBeforeUnmount(() => observer?.disconnect())
 })
 
 const goToWork = (slug: string) => {
