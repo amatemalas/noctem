@@ -340,7 +340,7 @@ watch(lazyVideos, (newEls, oldEls) => {
     display: flex;
     width: max-content;
     will-change: transform;
-    animation: noctem-scroll 40s linear infinite;
+    animation: noctem-scroll 25s linear infinite;
   }
 
   &__set {
