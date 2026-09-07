@@ -102,22 +102,28 @@
             </article>
           </TransitionGroup>
 
-          <div ref="loadMoreSentinel" class="noctem-works__sentinel" />
+          <div class="noctem-works__load-area">
+            <Transition name="works-loader">
+              <button
+                v-if="hasMore"
+                class="noctem-works__load-more"
+                :disabled="isLoadingMore"
+                @click="loadMore"
+              >
+                <span v-if="isLoadingMore" class="noctem-works__loader">
+                  <span class="noctem-works__loader-dot" />
+                  <span class="noctem-works__loader-dot" />
+                  <span class="noctem-works__loader-dot" />
+                </span>
+                <span v-else class="noctem-works__load-more-text">Cargar más</span>
+              </button>
+            </Transition>
 
-          <Transition name="works-loader">
-            <div v-if="isLoadingMore" class="noctem-works__load-more">
-              <div class="noctem-works__loader">
-                <span class="noctem-works__loader-dot" />
-                <span class="noctem-works__loader-dot" />
-                <span class="noctem-works__loader-dot" />
-              </div>
+            <div v-if="!hasMore && (currentPage > 1 || total > PER_PAGE)" class="noctem-works__end">
+              <div class="noctem-works__end-line" />
+              <span class="noctem-works__end-text">Todos los trabajos</span>
+              <div class="noctem-works__end-line" />
             </div>
-          </Transition>
-
-          <div v-if="!hasMore && (currentPage > 1 || total > PER_PAGE)" class="noctem-works__end">
-            <div class="noctem-works__end-line" />
-            <span class="noctem-works__end-text">Todos los trabajos</span>
-            <div class="noctem-works__end-line" />
           </div>
         </div>
       </template>
@@ -139,7 +145,6 @@ const total = ref(0)
 const lastPage = ref(1)
 const currentPage = ref(0)
 const isLoadingMore = ref(false)
-const loadMoreSentinel = ref<HTMLElement | null>(null)
 
 interface Work {
   id: number
@@ -267,38 +272,6 @@ const loadMore = async () => {
   isLoadingMore.value = false
   loadingInProgress = false
 }
-
-onMounted(() => {
-  let observer: IntersectionObserver | null = null
-
-  const startObserver = () => {
-    const sentinel = loadMoreSentinel.value
-    if (!sentinel) return
-    observer = new IntersectionObserver(
-      (entries) => {
-        if (!entries[0].isIntersecting) return
-        if (hasMore.value && !isLoadingMore.value) {
-          loadMore()
-        }
-      },
-      {
-        rootMargin: '400px 0px',
-        threshold: 0.01
-      }
-    )
-    observer.observe(sentinel)
-  }
-
-  startObserver()
-
-  watch(loadMoreSentinel, (sentinel) => {
-    if (sentinel) {
-      startObserver()
-    }
-  })
-
-  onBeforeUnmount(() => observer?.disconnect())
-})
 
 const goToWork = (slug: string) => {
   navigateTo(`/trabajos/${slug}`)
@@ -657,29 +630,51 @@ useHead({
   transform: translateY(20px) scale(0.98);
 }
 
-.noctem-works__sentinel {
-  width: 100%;
-  height: 1px;
-  pointer-events: none;
+.noctem-works__load-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 3rem 0 1rem;
 }
 
 .noctem-works__load-more {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 3rem 0 1rem;
+  min-height: 3rem;
+  padding: 0 2rem;
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--color-cream);
+  background-color: transparent;
+  border: 1px solid var(--color-orange-glow-soft);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color 0.5s ease, border-color 0.5s ease, background-color 0.5s ease;
+
+  &:hover:not(:disabled) {
+    color: var(--color-orange-bulb);
+    border-color: var(--color-orange-bulb);
+    background-color: var(--color-orange-glow-xlight);
+  }
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.85;
+  }
+}
+
+.noctem-works__load-more-text {
+  white-space: nowrap;
 }
 
 .noctem-works__loader {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.875rem 1.75rem;
-  border: 1px solid var(--color-orange-glow-soft);
-  border-radius: 999px;
-  background-color: rgba(5, 5, 5, 0.6);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  gap: 0.55rem;
 }
 
 .noctem-works__loader-dot {
@@ -715,7 +710,7 @@ useHead({
   align-items: center;
   justify-content: center;
   gap: 1.25rem;
-  padding: 3rem 0 1rem;
+  padding: 0.5rem 0 1rem;
 }
 
 .noctem-works__end-line {
