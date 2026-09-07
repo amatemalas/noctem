@@ -1,5 +1,6 @@
 <template>
     <div class="noctem-page">
+        <NoctemMousePointer />
         <div class="grain-overlay" />
         <NoctemNav />
         <NoctemHero :content="content?.data" />
