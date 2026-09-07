@@ -74,6 +74,7 @@
                 />
                 <video
                   v-if="work.isVideoMain"
+                  :ref="el => registerVideo(el)"
                   :src="work.mainVisual"
                   class="noctem-works__video noctem-works__video--main"
                   muted
@@ -85,6 +86,7 @@
                 />
                 <video
                   v-else-if="work.videoThumb"
+                  :ref="el => registerVideo(el)"
                   :src="work.videoThumb"
                   class="noctem-works__video"
                   muted
@@ -146,6 +148,19 @@ const lastPage = ref(1)
 const currentPage = ref(0)
 const isLoadingMore = ref(false)
 
+const registerVideo = (el: any) => {
+  if (!el || !(el instanceof HTMLVideoElement)) return
+  const attempt = () => {
+    el.muted = true
+    el.play().catch(() => {})
+  }
+  if (el.readyState >= 1) {
+    attempt()
+  } else {
+    el.addEventListener('loadeddata', attempt, { once: true })
+  }
+}
+
 interface Work {
   id: number
   title: string
@@ -202,9 +217,16 @@ const hasMore = computed(() => currentPage.value < lastPage.value)
 
 const allWorks = computed(() => works.value)
 
+const { data: tagMeta } = await useFetch(`${config.public.apiEndpoint}/works`, {
+  query: {
+    per_page: 100
+  },
+  transform: (response: any) => (response.data || []).map(normalizeWork)
+})
+
 const allTags = computed(() => {
   const counts = new Map<string, number>()
-  for (const work of works.value) {
+  for (const work of tagMeta.value || []) {
     for (const tag of work.tags) {
       counts.set(tag, (counts.get(tag) || 0) + 1)
     }
