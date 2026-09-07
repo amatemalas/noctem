@@ -476,14 +476,14 @@ useHead({
 
 .noctem-works__media-badge {
   position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
+  top: 0.875rem;
+  right: 0.875rem;
   z-index: 5;
   display: inline-flex;
   align-items: center;
-  gap: 0.375rem;
+  gap: 0.5rem;
   font-family: var(--font-body);
-  font-size: 0.625rem;
+  font-size: 0.75rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--color-orange-bulb);
@@ -491,12 +491,12 @@ useHead({
   background-color: rgba(5, 5, 5, 0.55);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
-  padding: 0.25rem 0.5rem;
+  padding: 0.4rem 0.75rem;
 
   &::before {
     content: "";
-    width: 0.375rem;
-    height: 0.375rem;
+    width: 0.5rem;
+    height: 0.5rem;
     border-radius: 50%;
     background-color: var(--color-orange-bulb);
     box-shadow: 0 0 8px var(--color-orange-glow-strong);
