@@ -186,11 +186,14 @@ const { data: initialPage, pending, error } = await useFetch(`${config.public.ap
     per_page: PER_PAGE,
     page: 1
   },
-  transform: (response: any) => ({
-    data: (response.data || []).map(normalizeWork),
-    total: response.total || 0,
-    lastPage: response.last_page || 1
-  })
+  transform: (response: any) => {
+    const meta = response.meta || {}
+    return {
+      data: (response.data || []).map(normalizeWork),
+      total: meta.total || 0,
+      lastPage: meta.last_page || 1
+    }
+  }
 })
 
 const displayedWorks = computed(() => works.value)
@@ -222,10 +225,11 @@ const fetchPage = async (page: number, tag: string): Promise<{ data: Work[]; tot
         ...(tag ? { tag } : {})
       }
     })
+    const meta = (response as any).meta || {}
     return {
       data: ((response as any).data || []).map(normalizeWork),
-      total: (response as any).total || 0,
-      lastPage: (response as any).last_page || 1
+      total: meta.total || 0,
+      lastPage: meta.last_page || 1
     }
   } catch {
     return null
