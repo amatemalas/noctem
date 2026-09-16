@@ -6,7 +6,20 @@
       <div class="noctem-gallery__header" data-aos="fade-up">
         <span class="noctem-gallery__label">Portfolio</span>
         <h2 class="noctem-gallery__title">
-          <p>Trabajos <strong>Seleccionados</strong></p>
+          <p>
+            Trabajos
+            <span class="noctem-gallery__rotator">
+              <span class="noctem-gallery__rotator-mask">
+                <strong
+                  v-for="(word, i) in rotatorWords"
+                  :key="i"
+                  class="noctem-gallery__rotator-word"
+                  :class="{ 'noctem-gallery__rotator-word--dup': i >= featuredWords.length }"
+                  :style="{ animationDelay: `${i * 1.5}s` }"
+                >{{ word }}</strong>
+              </span>
+            </span>
+          </p>
         </h2>
         <div class="noctem-gallery__line" />
       </div>
@@ -99,7 +112,7 @@ const { data: works, pending, error } = await useFetch(`${config.public.apiEndpo
   transform: (response: any) => {
     const isVideo = (src: string): boolean => /\.(mp4|webm|mov|m4v)$/i.test((src || '').split('?')[0])
     const arr = response.data || []
-    return arr.slice(0, 9).map((work: any) => {
+    return arr.slice(0, 12).map((work: any) => {
       const images = Array.isArray(work.images) ? work.images : []
       const mainVisual = work.image || images[0] || ''
       const hasPhoto = images.some((src: string) => !isVideo(src))
@@ -134,6 +147,8 @@ interface Work {
   mediaType: string
 }
 
+const featuredWords = ['Seleccionados', 'Destacados', 'Elegidos']
+const rotatorWords = [...featuredWords, featuredWords[1]]
 const galleryItems = computed<Work[]>(() => works.value || [])
 const carouselSets = computed(() => [galleryItems.value, galleryItems.value, galleryItems.value])
 const lazyVideos = ref<HTMLVideoElement[]>([])
@@ -255,11 +270,37 @@ watch(lazyVideos, (newEls, oldEls) => {
     @media (min-width: 1280px) {
       font-size: 4.5rem;
     }
+  }
 
-    strong {
+  &__rotator {
+    position: relative;
+    display: inline-block;
+    height: 1.1em;
+    overflow: hidden;
+    vertical-align: bottom;
+
+    &-mask {
+      position: relative;
+      display: block;
+      animation: noctem-rotator 6s linear infinite;
+    }
+
+    &-word {
+      display: block;
       font-style: italic;
-      color: var(--color-orange-bulb);
-      text-shadow: 0 0 40px var(--color-orange-glow-strong), 0 0 80px var(--color-orange-glow);
+      line-height: 1.1;
+      white-space: nowrap;
+      background: linear-gradient(
+        180deg,
+        var(--color-orange-bulb-light) 0%,
+        var(--color-orange-bulb) 55%,
+        var(--color-orange-bulb-dark) 100%
+      );
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      color: transparent;
+      animation: noctem-word 6s linear infinite;
     }
   }
 
@@ -498,6 +539,50 @@ watch(lazyVideos, (newEls, oldEls) => {
   }
   to {
     transform: translateX(calc(var(--marquee-move, 0px) * -1));
+  }
+}
+
+@keyframes noctem-rotator {
+  0%, 24.99% {
+    transform: translateY(0);
+  }
+  25%, 49.99% {
+    transform: translateY(-25%);
+  }
+  50%, 74.99% {
+    transform: translateY(-50%);
+  }
+  75%, 99.99% {
+    transform: translateY(-75%);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes noctem-word {
+  0% {
+    transform: translateY(0.6em);
+    opacity: 0;
+    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  7% {
+    transform: translateY(0);
+    opacity: 1;
+    animation-timing-function: linear;
+  }
+  18% {
+    transform: translateY(0);
+    opacity: 1;
+    animation-timing-function: cubic-bezier(0.7, 0, 1, 0.4);
+  }
+  25% {
+    transform: translateY(-0.4em);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(-0.4em);
+    opacity: 0;
   }
 }
 </style>
