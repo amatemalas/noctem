@@ -106,9 +106,7 @@
 </template>
 
 <script setup lang="ts">
-const config = useRuntimeConfig()
-
-const { data: works, pending, error } = await useFetch(`${config.public.apiEndpoint}/works`, {
+const { data: works, pending, error } = await useFetch('/api/works', {
   transform: (response: any) => {
     const isVideo = (src: string): boolean => /\.(mp4|webm|mov|m4v)$/i.test((src || '').split('?')[0])
     const arr = response.data || []

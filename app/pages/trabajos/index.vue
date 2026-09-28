@@ -148,11 +148,12 @@
 </template>
 
 <script setup lang="ts">
-const config = useRuntimeConfig()
 const route = useRoute()
 const router = useRouter()
 
 const PER_PAGE = 9
+
+const WORKS_ENDPOINT = '/api/works'
 
 interface Work {
   id: number
@@ -236,7 +237,7 @@ const registerVideo = (el: any) => {
 }
 
 const fetchPage = async (tag: string, page: number): Promise<Omit<WorksPage, 'loadedPage'>> => {
-  const response = await $fetch<any>(`${config.public.apiEndpoint}/works`, {
+  const response = await $fetch<any>(WORKS_ENDPOINT, {
     query: {
       per_page: PER_PAGE,
       page,
@@ -276,12 +277,16 @@ const loadAppending = async (tag: string, page: number): Promise<WorksPage> => {
   }
 }
 
+let requestSeq = 0
+let loadedQuery = { tag: '', page: 1 }
+
 const applyResult = (result: WorksPage | null) => {
   if (!result) return
   works.value = result.data
   filteredTotal.value = result.total
   filteredLastPage.value = result.lastPage
   loadedPage.value = result.loadedPage
+  loadedQuery = { tag: activeTag.value, page: targetPage.value }
 }
 
 const { data: initialResult, pending, error } = await useAsyncData('works-list', () =>
@@ -290,7 +295,7 @@ const { data: initialResult, pending, error } = await useAsyncData('works-list',
 
 applyResult(initialResult.value)
 
-const { data: facets } = await useFetch(`${config.public.apiEndpoint}/works`, {
+const { data: facets } = await useFetch(WORKS_ENDPOINT, {
   query: {
     per_page: 100
   },
@@ -314,7 +319,10 @@ const allTags = computed(() => {
 
 const allTotal = computed(() => facets.value?.total || 0)
 
-let requestSeq = 0
+const rollbackQuery = () => {
+  if (loadedQuery.tag === activeTag.value && loadedQuery.page === targetPage.value) return
+  router.replace({ path: '/trabajos', query: buildListQuery(loadedQuery.tag, loadedQuery.page) })
+}
 
 const runLoad = async (tag: string, page: number, append: boolean) => {
   const seq = ++requestSeq
@@ -326,13 +334,15 @@ const runLoad = async (tag: string, page: number, append: boolean) => {
     if (seq !== requestSeq) return
     applyResult(result)
   } catch {
-    // keep the works already on screen when a request fails
+    if (seq !== requestSeq) return
+    rollbackQuery()
   } finally {
     if (seq === requestSeq) isLoadingMore.value = false
   }
 }
 
 watch([activeTag, targetPage], ([tag, page], [prevTag, prevPage]) => {
+  if (tag === loadedQuery.tag && page === loadedQuery.page) return
   runLoad(tag, page, tag === prevTag && page === prevPage + 1)
 })
 
