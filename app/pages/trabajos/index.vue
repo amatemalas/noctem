@@ -32,17 +32,17 @@
             <button
               class="noctem-works__filter"
               :class="{ 'noctem-works__filter--active': activeTag === '' }"
-              @click="activeTag = ''"
+              @click="selectTag('')"
             >
               Todos
-              <span class="noctem-works__filter-count">{{ total }}</span>
+              <span class="noctem-works__filter-count">{{ allTotal }}</span>
             </button>
             <button
               v-for="tag in allTags"
               :key="tag.tag"
               class="noctem-works__filter"
               :class="{ 'noctem-works__filter--active': activeTag === tag.tag }"
-              @click="activeTag = tag.tag"
+              @click="selectTag(tag.tag)"
             >
               {{ tag.tag }}
               <span class="noctem-works__filter-count">{{ tag.count }}</span>
@@ -121,10 +121,21 @@
               </button>
             </Transition>
 
-            <div v-if="!hasMore && (currentPage > 1 || total > PER_PAGE)" class="noctem-works__end">
+            <div v-if="!hasMore && (loadedPage > 1 || filteredTotal > PER_PAGE)" class="noctem-works__end">
               <div class="noctem-works__end-line" />
               <span class="noctem-works__end-text">Todos los trabajos</span>
               <div class="noctem-works__end-line" />
+            </div>
+
+            <div v-if="!hasMore && !works.length && !isLoadingMore" class="noctem-works__empty">
+              <span class="noctem-works__empty-text">No hay trabajos en esta categoría</span>
+              <button
+                v-if="activeTag"
+                class="noctem-works__empty-reset"
+                @click="selectTag('')"
+              >
+                Ver todos los trabajos
+              </button>
             </div>
           </div>
         </div>
@@ -138,28 +149,10 @@
 
 <script setup lang="ts">
 const config = useRuntimeConfig()
+const route = useRoute()
+const router = useRouter()
 
 const PER_PAGE = 9
-
-const activeTag = ref('')
-const works = ref<Work[]>([])
-const total = ref(0)
-const lastPage = ref(1)
-const currentPage = ref(0)
-const isLoadingMore = ref(false)
-
-const registerVideo = (el: any) => {
-  if (!el || !(el instanceof HTMLVideoElement)) return
-  const attempt = () => {
-    el.muted = true
-    el.play().catch(() => {})
-  }
-  if (el.readyState >= 1) {
-    attempt()
-  } else {
-    el.addEventListener('loadeddata', attempt, { once: true })
-  }
-}
 
 interface Work {
   id: number
@@ -171,6 +164,13 @@ interface Work {
   tags: string[]
   category: string
   mediaType: string
+}
+
+interface WorksPage {
+  data: Work[]
+  total: number
+  lastPage: number
+  loadedPage: number
 }
 
 const normalizeWork = (work: any): Work => {
@@ -196,37 +196,113 @@ const normalizeWork = (work: any): Work => {
   }
 }
 
-const { data: initialPage, pending, error } = await useFetch(`${config.public.apiEndpoint}/works`, {
-  query: {
-    per_page: PER_PAGE,
-    page: 1
-  },
-  transform: (response: any) => {
-    const meta = response.meta || {}
-    return {
-      data: (response.data || []).map(normalizeWork),
-      total: meta.total || 0,
-      lastPage: meta.last_page || 1
-    }
-  }
+const readQueryValue = (value: unknown): string => (typeof value === 'string' ? value : '')
+
+const buildListQuery = (tag: string, page: number) => {
+  const query: Record<string, string> = {}
+  if (tag) query.tag = tag
+  if (page > 1) query.page = String(page)
+  return query
+}
+
+const activeTag = computed(() => readQueryValue(route.query.tag))
+
+const targetPage = computed(() => {
+  const page = Number.parseInt(readQueryValue(route.query.page) || '1', 10)
+  return Number.isFinite(page) && page > 0 ? page : 1
 })
+
+const works = ref<Work[]>([])
+const filteredTotal = ref(0)
+const filteredLastPage = ref(1)
+const loadedPage = ref(0)
+const isLoadingMore = ref(false)
 
 const displayedWorks = computed(() => works.value)
 
-const hasMore = computed(() => currentPage.value < lastPage.value)
+const hasMore = computed(() => loadedPage.value < filteredLastPage.value)
 
-const allWorks = computed(() => works.value)
+const registerVideo = (el: any) => {
+  if (!el || !(el instanceof HTMLVideoElement)) return
+  const attempt = () => {
+    el.muted = true
+    el.play().catch(() => {})
+  }
+  if (el.readyState >= 1) {
+    attempt()
+  } else {
+    el.addEventListener('loadeddata', attempt, { once: true })
+  }
+}
 
-const { data: tagMeta } = await useFetch(`${config.public.apiEndpoint}/works`, {
+const fetchPage = async (tag: string, page: number): Promise<Omit<WorksPage, 'loadedPage'>> => {
+  const response = await $fetch<any>(`${config.public.apiEndpoint}/works`, {
+    query: {
+      per_page: PER_PAGE,
+      page,
+      ...(tag ? { tag } : {})
+    }
+  })
+  const meta = response?.meta || {}
+  return {
+    data: (response.data || []).map(normalizeWork),
+    total: meta.total || 0,
+    lastPage: meta.last_page || 1
+  }
+}
+
+const loadFromStart = async (tag: string, page: number): Promise<WorksPage> => {
+  const first = await fetchPage(tag, 1)
+  const lastLoadedPage = Math.min(page, Math.max(first.lastPage, 1))
+  if (lastLoadedPage <= 1) return { ...first, loadedPage: 1 }
+  const rest = await Promise.all(
+    Array.from({ length: lastLoadedPage - 1 }, (_, index) => fetchPage(tag, index + 2))
+  )
+  return {
+    data: [...first.data, ...rest.flatMap(item => item.data)],
+    total: first.total,
+    lastPage: first.lastPage,
+    loadedPage: lastLoadedPage
+  }
+}
+
+const loadAppending = async (tag: string, page: number): Promise<WorksPage> => {
+  const next = await fetchPage(tag, page)
+  return {
+    data: [...works.value, ...next.data],
+    total: next.total,
+    lastPage: next.lastPage,
+    loadedPage: page
+  }
+}
+
+const applyResult = (result: WorksPage | null) => {
+  if (!result) return
+  works.value = result.data
+  filteredTotal.value = result.total
+  filteredLastPage.value = result.lastPage
+  loadedPage.value = result.loadedPage
+}
+
+const { data: initialResult, pending, error } = await useAsyncData('works-list', () =>
+  loadFromStart(activeTag.value, targetPage.value)
+)
+
+applyResult(initialResult.value)
+
+const { data: facets } = await useFetch(`${config.public.apiEndpoint}/works`, {
   query: {
     per_page: 100
   },
-  transform: (response: any) => (response.data || []).map(normalizeWork)
+  transform: (response: any) => ({
+    items: (response.data || []).map(normalizeWork),
+    total: (response.meta || {}).total || (response.data || []).length
+  })
 })
 
 const allTags = computed(() => {
   const counts = new Map<string, number>()
-  for (const work of tagMeta.value || []) {
+  for (const work of facets.value?.items || []) {
     for (const tag of work.tags) {
       counts.set(tag, (counts.get(tag) || 0) + 1)
     }
@@ -236,71 +312,45 @@ const allTags = computed(() => {
     .sort((a, b) => a.tag.localeCompare(b.tag))
 })
 
-const filteredWorks = computed(() => works.value)
-
-const fetchPage = async (page: number, tag: string): Promise<{ data: Work[]; total: number; lastPage: number } | null> => {
-  try {
-    const response = await $fetch(`${config.public.apiEndpoint}/works`, {
-      query: {
-        per_page: PER_PAGE,
-        page,
-        ...(tag ? { tag } : {})
-      }
-    })
-    const meta = (response as any).meta || {}
-    return {
-      data: ((response as any).data || []).map(normalizeWork),
-      total: meta.total || 0,
-      lastPage: meta.last_page || 1
-    }
-  } catch {
-    return null
-  }
-}
-
-const applyFirstPage = (page: { data: Work[]; total: number; lastPage: number } | null | undefined) => {
-  works.value = page?.data || []
-  total.value = page?.total || 0
-  lastPage.value = page?.lastPage || 1
-  currentPage.value = page ? 1 : 0
-}
-
-applyFirstPage(initialPage.value)
+const allTotal = computed(() => facets.value?.total || 0)
 
 let requestSeq = 0
 
-const loadFirstPage = async () => {
+const runLoad = async (tag: string, page: number, append: boolean) => {
   const seq = ++requestSeq
   isLoadingMore.value = true
-  const page = await fetchPage(1, activeTag.value)
-  if (seq === requestSeq) {
-    applyFirstPage(page)
-    isLoadingMore.value = false
+  try {
+    const result = append
+      ? await loadAppending(tag, page)
+      : await loadFromStart(tag, page)
+    if (seq !== requestSeq) return
+    applyResult(result)
+  } catch {
+    // keep the works already on screen when a request fails
+  } finally {
+    if (seq === requestSeq) isLoadingMore.value = false
   }
 }
 
-watch(activeTag, loadFirstPage)
+watch([activeTag, targetPage], ([tag, page], [prevTag, prevPage]) => {
+  runLoad(tag, page, tag === prevTag && page === prevPage + 1)
+})
 
-let loadingInProgress = false
+const selectTag = (tag: string) => {
+  if (tag === activeTag.value) return
+  router.replace({ path: '/trabajos', query: buildListQuery(tag, 1) })
+}
 
-const loadMore = async () => {
-  if (loadingInProgress) return
-  if (!hasMore.value) return
-  loadingInProgress = true
-  isLoadingMore.value = true
-  const page = await fetchPage(currentPage.value + 1, activeTag.value)
-  if (page) {
-    works.value = [...works.value, ...page.data]
-    total.value = page.total
-    lastPage.value = page.lastPage
-    currentPage.value += 1
-  }
-  isLoadingMore.value = false
-  loadingInProgress = false
+const loadMore = () => {
+  if (!hasMore.value || isLoadingMore.value) return
+  router.replace({ path: '/trabajos', query: buildListQuery(activeTag.value, loadedPage.value + 1) })
 }
 
 const goToWork = (slug: string) => {
-  navigateTo(`/trabajos/${slug}`)
+  navigateTo({
+    path: `/trabajos/${slug}`,
+    query: buildListQuery(activeTag.value, targetPage.value)
+  })
 }
 
 useHead({
@@ -654,6 +704,43 @@ useHead({
 .works-card-leave-to {
   opacity: 0;
   transform: translateY(20px) scale(0.98);
+}
+
+.noctem-works__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 2rem 0 1rem;
+  text-align: center;
+}
+
+.noctem-works__empty-text {
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--color-gray-warm);
+  opacity: 0.7;
+}
+
+.noctem-works__empty-reset {
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--color-orange-bulb);
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--color-orange-glow-soft);
+  padding: 0.25rem 0;
+  cursor: pointer;
+  transition: color 0.5s ease, border-color 0.5s ease;
+
+  &:hover {
+    color: var(--color-cream);
+    border-bottom-color: var(--color-orange-bulb);
+  }
 }
 
 .noctem-works__load-area {
