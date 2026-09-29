@@ -124,6 +124,7 @@
 import type lightGallery from 'lightgallery'
 
 const route = useRoute()
+const config = useRuntimeConfig()
 const slug = computed(() => route.params.slug as string)
 
 const backLink = computed(() => {
@@ -141,13 +142,16 @@ const lazyVideos = ref<HTMLVideoElement[]>([])
 let videoObserver: IntersectionObserver | null = null
 const isVideoSrc = (src: string): boolean => /\.(mp4|webm|mov|m4v|ogv)$/i.test(src.split('?')[0])
 
-const { data: works, pending, error, refresh } = await useFetch(() => '/api/works', {
-  query: {
-    slug: slug.value,
-    per_page: 1
-  },
-  transform: (response: any) => response.data || []
-})
+const { data: works, pending, error, refresh } = await useFetch(
+  () => `${config.public.apiEndpoint}/works`,
+  {
+    query: {
+      slug: slug.value,
+      per_page: 1
+    },
+    transform: (response: any) => response.data || []
+  }
+)
 
 watch(slug, () => {
   refresh()

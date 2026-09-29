@@ -58,7 +58,7 @@
           >
             <article
               v-for="(work, index) in displayedWorks"
-              :key="work.slug"
+              :key="work.id"
               class="noctem-works__card"
               :style="{ transitionDelay: `${index * 0.03}s` }"
               @click="goToWork(work.slug)"
@@ -105,29 +105,17 @@
           </TransitionGroup>
 
           <div class="noctem-works__load-area">
-            <Transition name="works-loader">
-              <button
-                v-if="hasMore"
-                class="noctem-works__load-more"
-                :disabled="isLoadingMore"
-                @click="loadMore"
-              >
-                <span v-if="isLoadingMore" class="noctem-works__loader">
-                  <span class="noctem-works__loader-dot" />
-                  <span class="noctem-works__loader-dot" />
-                  <span class="noctem-works__loader-dot" />
-                </span>
-                <span v-else class="noctem-works__load-more-text">Cargar más</span>
-              </button>
-            </Transition>
+            <button v-if="hasMore" class="noctem-works__load-more" @click="loadMore">
+              <span class="noctem-works__load-more-text">Cargar más</span>
+            </button>
 
-            <div v-if="!hasMore && (loadedPage > 1 || filteredTotal > PER_PAGE)" class="noctem-works__end">
+            <div v-if="!hasMore && filteredTotal > 0 && (targetPage > 1 || filteredTotal > PER_PAGE)" class="noctem-works__end">
               <div class="noctem-works__end-line" />
               <span class="noctem-works__end-text">Todos los trabajos</span>
               <div class="noctem-works__end-line" />
             </div>
 
-            <div v-if="!hasMore && !works.length && !isLoadingMore" class="noctem-works__empty">
+            <div v-if="!hasMore && !filteredTotal" class="noctem-works__empty">
               <span class="noctem-works__empty-text">No hay trabajos en esta categoría</span>
               <button
                 v-if="activeTag"
@@ -151,9 +139,10 @@
 const route = useRoute()
 const router = useRouter()
 
-const PER_PAGE = 9
+const config = useRuntimeConfig()
 
-const WORKS_ENDPOINT = '/api/works'
+const PER_PAGE = 9
+const CATALOGUE_PER_PAGE = 100
 
 interface Work {
   id: number
@@ -167,14 +156,25 @@ interface Work {
   mediaType: string
 }
 
-interface WorksPage {
-  data: Work[]
-  total: number
-  lastPage: number
-  loadedPage: number
+interface RawWork {
+  id: number
+  title: string
+  slug: string
+  image: string
+  images: string[]
+  videos: unknown[]
+  tags: string[]
 }
 
-const normalizeWork = (work: any): Work => {
+interface WorksResponse {
+  data: RawWork[]
+  meta?: {
+    total?: number
+    last_page?: number
+  }
+}
+
+const normalizeWork = (work: RawWork): Work => {
   const isVideo = (src: string): boolean => /\.(mp4|webm|mov|m4v)$/i.test((src || '').split('?')[0])
   const images = Array.isArray(work.images) ? work.images : []
   const mainVisual = work.image || images[0] || ''
@@ -213,17 +213,7 @@ const targetPage = computed(() => {
   return Number.isFinite(page) && page > 0 ? page : 1
 })
 
-const works = ref<Work[]>([])
-const filteredTotal = ref(0)
-const filteredLastPage = ref(1)
-const loadedPage = ref(0)
-const isLoadingMore = ref(false)
-
-const displayedWorks = computed(() => works.value)
-
-const hasMore = computed(() => loadedPage.value < filteredLastPage.value)
-
-const registerVideo = (el: any) => {
+const registerVideo = (el: unknown) => {
   if (!el || !(el instanceof HTMLVideoElement)) return
   const attempt = () => {
     el.muted = true
@@ -236,78 +226,33 @@ const registerVideo = (el: any) => {
   }
 }
 
-const fetchPage = async (tag: string, page: number): Promise<Omit<WorksPage, 'loadedPage'>> => {
-  const response = await $fetch<any>(WORKS_ENDPOINT, {
-    query: {
-      per_page: PER_PAGE,
-      page,
-      ...(tag ? { tag } : {})
-    }
+const fetchWorksPage = async (page: number): Promise<WorksResponse> =>
+  await $fetch<WorksResponse>(`${config.public.apiEndpoint}/works`, {
+    query: { per_page: CATALOGUE_PER_PAGE, page }
   })
-  const meta = response?.meta || {}
-  return {
-    data: (response.data || []).map(normalizeWork),
-    total: meta.total || 0,
-    lastPage: meta.last_page || 1
-  }
-}
 
-const loadFromStart = async (tag: string, page: number): Promise<WorksPage> => {
-  const first = await fetchPage(tag, 1)
-  const lastLoadedPage = Math.min(page, Math.max(first.lastPage, 1))
-  if (lastLoadedPage <= 1) return { ...first, loadedPage: 1 }
+// The site is deployed as static output, so the whole catalogue is resolved once
+// while prerendering. Tag filtering and pagination then run on this snapshot, which
+// keeps the list working on the static host without any runtime API request.
+const fetchCatalogue = async (): Promise<Work[]> => {
+  const first = await fetchWorksPage(1)
+  const lastPage = Math.max(first.meta?.last_page || 1, 1)
+  if (lastPage <= 1) return (first.data || []).map(normalizeWork)
   const rest = await Promise.all(
-    Array.from({ length: lastLoadedPage - 1 }, (_, index) => fetchPage(tag, index + 2))
+    Array.from({ length: lastPage - 1 }, (_, index) => fetchWorksPage(index + 2))
   )
-  return {
-    data: [...first.data, ...rest.flatMap(item => item.data)],
-    total: first.total,
-    lastPage: first.lastPage,
-    loadedPage: lastLoadedPage
-  }
+  return [first, ...rest].flatMap(page => (page.data || []).map(normalizeWork))
 }
 
-const loadAppending = async (tag: string, page: number): Promise<WorksPage> => {
-  const next = await fetchPage(tag, page)
-  return {
-    data: [...works.value, ...next.data],
-    total: next.total,
-    lastPage: next.lastPage,
-    loadedPage: page
-  }
-}
+const { data: catalogue, pending, error } = await useAsyncData('works-catalogue', fetchCatalogue)
 
-let requestSeq = 0
-let loadedQuery = { tag: '', page: 1 }
+const allWorks = computed(() => catalogue.value || [])
 
-const applyResult = (result: WorksPage | null) => {
-  if (!result) return
-  works.value = result.data
-  filteredTotal.value = result.total
-  filteredLastPage.value = result.lastPage
-  loadedPage.value = result.loadedPage
-  loadedQuery = { tag: activeTag.value, page: targetPage.value }
-}
-
-const { data: initialResult, pending, error } = await useAsyncData('works-list', () =>
-  loadFromStart(activeTag.value, targetPage.value)
-)
-
-applyResult(initialResult.value)
-
-const { data: facets } = await useFetch(WORKS_ENDPOINT, {
-  query: {
-    per_page: 100
-  },
-  transform: (response: any) => ({
-    items: (response.data || []).map(normalizeWork),
-    total: (response.meta || {}).total || (response.data || []).length
-  })
-})
+const allTotal = computed(() => allWorks.value.length)
 
 const allTags = computed(() => {
   const counts = new Map<string, number>()
-  for (const work of facets.value?.items || []) {
+  for (const work of allWorks.value) {
     for (const tag of work.tags) {
       counts.set(tag, (counts.get(tag) || 0) + 1)
     }
@@ -317,34 +262,16 @@ const allTags = computed(() => {
     .sort((a, b) => a.tag.localeCompare(b.tag))
 })
 
-const allTotal = computed(() => facets.value?.total || 0)
-
-const rollbackQuery = () => {
-  if (loadedQuery.tag === activeTag.value && loadedQuery.page === targetPage.value) return
-  router.replace({ path: '/trabajos', query: buildListQuery(loadedQuery.tag, loadedQuery.page) })
-}
-
-const runLoad = async (tag: string, page: number, append: boolean) => {
-  const seq = ++requestSeq
-  isLoadingMore.value = true
-  try {
-    const result = append
-      ? await loadAppending(tag, page)
-      : await loadFromStart(tag, page)
-    if (seq !== requestSeq) return
-    applyResult(result)
-  } catch {
-    if (seq !== requestSeq) return
-    rollbackQuery()
-  } finally {
-    if (seq === requestSeq) isLoadingMore.value = false
-  }
-}
-
-watch([activeTag, targetPage], ([tag, page], [prevTag, prevPage]) => {
-  if (tag === loadedQuery.tag && page === loadedQuery.page) return
-  runLoad(tag, page, tag === prevTag && page === prevPage + 1)
+const filteredWorks = computed(() => {
+  if (!activeTag.value) return allWorks.value
+  return allWorks.value.filter(work => work.tags.includes(activeTag.value))
 })
+
+const filteredTotal = computed(() => filteredWorks.value.length)
+
+const displayedWorks = computed(() => filteredWorks.value.slice(0, targetPage.value * PER_PAGE))
+
+const hasMore = computed(() => displayedWorks.value.length < filteredTotal.value)
 
 const selectTag = (tag: string) => {
   if (tag === activeTag.value) return
@@ -352,8 +279,8 @@ const selectTag = (tag: string) => {
 }
 
 const loadMore = () => {
-  if (!hasMore.value || isLoadingMore.value) return
-  router.replace({ path: '/trabajos', query: buildListQuery(activeTag.value, loadedPage.value + 1) })
+  if (!hasMore.value) return
+  router.replace({ path: '/trabajos', query: buildListQuery(activeTag.value, targetPage.value + 1) })
 }
 
 const goToWork = (slug: string) => {
@@ -794,40 +721,6 @@ useHead({
   white-space: nowrap;
 }
 
-.noctem-works__loader {
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
-}
-
-.noctem-works__loader-dot {
-  width: 0.4rem;
-  height: 0.4rem;
-  border-radius: 50%;
-  background-color: var(--color-orange-bulb);
-  box-shadow: 0 0 8px var(--color-orange-glow-strong);
-  animation: loaderDot 1.2s var(--ease-in-out-quart) infinite;
-
-  &:nth-child(2) {
-    animation-delay: 0.15s;
-  }
-
-  &:nth-child(3) {
-    animation-delay: 0.3s;
-  }
-}
-
-@keyframes loaderDot {
-  0%, 60%, 100% {
-    transform: translateY(0);
-    opacity: 0.35;
-  }
-  30% {
-    transform: translateY(-6px);
-    opacity: 1;
-  }
-}
-
 .noctem-works__end {
   display: flex;
   align-items: center;
@@ -852,14 +745,4 @@ useHead({
   white-space: nowrap;
 }
 
-.works-loader-enter-active,
-.works-loader-leave-active {
-  transition: opacity 0.4s var(--ease-out-expo), transform 0.4s var(--ease-out-expo);
-}
-
-.works-loader-enter-from,
-.works-loader-leave-to {
-  opacity: 0;
-  transform: translateY(12px);
-}
 </style>
