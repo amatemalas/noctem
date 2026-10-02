@@ -28,8 +28,8 @@
             </div>
             <div class="noctem-about__stat-divider" />
             <div class="noctem-about__stat">
-              <span class="noctem-about__stat-number">{{ content?.stats_island || '島' }}</span>
-              <span class="noctem-about__stat-label">Nacido en la isla</span>
+              <span class="noctem-about__stat-number">{{ content?.stats_island || '100+' }}</span>
+              <span class="noctem-about__stat-label">Clientes</span>
             </div>
           </div>
         </div>

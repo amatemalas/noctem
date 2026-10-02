@@ -99,7 +99,10 @@
     <div v-if="galleryItems.length" class="noctem-gallery__cta-wrap">
       <button type="button" class="noctem-gallery__cta" @click="$router.push('/trabajos')">
         <span class="noctem-gallery__cta-bg" />
-        <span class="noctem-gallery__cta-text">Ver todos los trabajos</span>
+        <span class="noctem-gallery__cta-text">
+          <span class="noctem-gallery__cta-label noctem-gallery__cta-label--default">Ver todos los trabajos</span>
+          <span class="noctem-gallery__cta-label noctem-gallery__cta-label--hover" aria-hidden="true">Always us</span>
+        </span>
       </button>
     </div>
   </section>
@@ -344,12 +347,23 @@ watch(lazyVideos, (newEls, oldEls) => {
     &-text {
       position: relative;
       z-index: 10;
+      display: inline-grid;
       font-family: var(--font-body);
       font-size: 0.875rem;
       letter-spacing: 0.2em;
       text-transform: uppercase;
       color: var(--color-orange-bulb);
       transition: color 0.5s ease;
+    }
+
+    &-label {
+      grid-area: 1 / 1;
+      transition: opacity 0.35s ease, transform 0.35s var(--ease-out-expo);
+
+      &--hover {
+        opacity: 0;
+        transform: translateY(0.6em);
+      }
     }
 
     &:hover {
@@ -359,6 +373,16 @@ watch(lazyVideos, (newEls, oldEls) => {
 
       .noctem-gallery__cta-text {
         color: var(--color-black-deep);
+      }
+
+      .noctem-gallery__cta-label--default {
+        opacity: 0;
+        transform: translateY(-0.6em);
+      }
+
+      .noctem-gallery__cta-label--hover {
+        opacity: 1;
+        transform: translateY(0);
       }
     }
   }
