@@ -6,7 +6,7 @@
     <main class="noctem-work__main">
       <div class="noctem-work__hero">
         <div class="noctem-work__hero-container">
-          <NuxtLink to="/trabajos" class="noctem-work__back">
+          <NuxtLink :to="backLink" class="noctem-work__back">
             <span class="noctem-work__back-icon">←</span>
             <span class="noctem-work__back-text">Volver</span>
           </NuxtLink>
@@ -51,14 +51,13 @@
       <section v-if="galleryItems.length" class="noctem-work__gallery">
         <div class="noctem-work__gallery-container">
           <div 
-            class="noctem-work__masonry"
-            :class="{ 'noctem-work__masonry--loaded': isLoaded }"
+            class="noctem-work__grid"
+            :class="{ 'noctem-work__grid--loaded': isLoaded }"
           >
             <div
               v-for="(item, index) in galleryItems"
               :key="item.key"
               class="noctem-work__item"
-              :class="getItemClass(index)"
               :style="{ animationDelay: `${0.6 + index * 0.08}s` }"
               @click="openGallery(index)"
             >
@@ -128,19 +127,31 @@ const route = useRoute()
 const config = useRuntimeConfig()
 const slug = computed(() => route.params.slug as string)
 
+const backLink = computed(() => {
+  const query: Record<string, string> = {}
+  const tag = route.query.tag
+  const page = route.query.page
+  if (typeof tag === 'string' && tag) query.tag = tag
+  if (typeof page === 'string' && page && page !== '1') query.page = page
+  return { path: '/trabajos', query }
+})
+
 const isLoaded = ref(false)
 const lightboxInstance = ref<ReturnType<typeof lightGallery> | null>(null)
 const lazyVideos = ref<HTMLVideoElement[]>([])
 let videoObserver: IntersectionObserver | null = null
 const isVideoSrc = (src: string): boolean => /\.(mp4|webm|mov|m4v|ogv)$/i.test(src.split('?')[0])
 
-const { data: works, pending, error, refresh } = await useFetch(() => `${config.public.apiEndpoint}/works`, {
-  query: {
-    slug: slug.value,
-    per_page: 1
-  },
-  transform: (response: any) => response.data || []
-})
+const { data: works, pending, error, refresh } = await useFetch(
+  () => `${config.public.apiEndpoint}/works`,
+  {
+    query: {
+      slug: slug.value,
+      per_page: 1
+    },
+    transform: (response: any) => response.data || []
+  }
+)
 
 watch(slug, () => {
   refresh()
@@ -189,11 +200,6 @@ onMounted(() => {
 
   setupVideoObserver()
 })
-
-const getItemClass = (index: number) => {
-  const patterns = ['noctem-work__item--tall', 'noctem-work__item--wide', '', 'noctem-work__item--tall']
-  return patterns[index % patterns.length]
-}
 
 const getYouTubeEmbedUrl = (url: string): string => {
   const patterns = [
@@ -438,27 +444,28 @@ watch(lazyVideos, (newEls, oldEls) => {
   }
 }
 
-.noctem-work__masonry {
+.noctem-work__grid {
   display: grid;
   grid-template-columns: 1fr;
   gap: 1.5rem;
+  align-items: start;
   opacity: 0;
   transition: opacity 0.8s var(--ease-out-expo);
 }
 
-.noctem-work__masonry--loaded {
+.noctem-work__grid--loaded {
   opacity: 1;
 }
 
 @media (min-width: 640px) {
-  .noctem-work__masonry {
+  .noctem-work__grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 1.5rem;
   }
 }
 
 @media (min-width: 1024px) {
-  .noctem-work__masonry {
+  .noctem-work__grid {
     grid-template-columns: repeat(3, 1fr);
     gap: 2rem;
   }
@@ -471,42 +478,10 @@ watch(lazyVideos, (newEls, oldEls) => {
   animation: fadeUp 0.8s var(--ease-out-expo) forwards;
 }
 
-.noctem-work__item--wide {
-  grid-column: span 1;
-}
-
-@media (min-width: 640px) {
-  .noctem-work__item--tall {
-    grid-row: span 2;
-  }
-}
-
-@media (min-width: 1024px) {
-  .noctem-work__item--wide {
-    grid-column: span 2;
-  }
-}
-
 .noctem-work__image-wrap {
   position: relative;
   overflow: hidden;
   background-color: var(--color-black-soft);
-}
-
-@media (min-width: 640px) {
-  .noctem-work__item--tall .noctem-work__image-wrap {
-    aspect-ratio: auto;
-    height: 100%;
-    min-height: 400px;
-  }
-
-  .noctem-work__item--wide .noctem-work__image-wrap {
-    aspect-ratio: 16/9;
-  }
-
-  .noctem-work__item:not(.noctem-work__item--tall):not(.noctem-work__item--wide) .noctem-work__image-wrap {
-    aspect-ratio: 1;
-  }
 }
 
 .noctem-work__image,
@@ -516,14 +491,6 @@ watch(lazyVideos, (newEls, oldEls) => {
   display: block;
   filter: grayscale(20%) brightness(0.8);
   transition: transform 0.8s var(--ease-out-expo), filter 0.8s var(--ease-out-expo);
-}
-
-@media (min-width: 640px) {
-  .noctem-work__image,
-  .noctem-work__video-thumb {
-    height: 100%;
-    object-fit: cover;
-  }
 }
 
 .noctem-work__item:hover .noctem-work__image,

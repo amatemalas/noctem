@@ -2,12 +2,6 @@
   <footer class="noctem-footer">
     <div class="noctem-footer__container">
       <div class="noctem-footer__top">
-        <div class="noctem-footer__brand">
-          <span class="noctem-footer__logo font-display text-2xl text-cream">
-            <img width="150" src="/assets/images/4x/Recurso 1IDENTIDAD_NOCTEM.png" alt="Noctem">
-          </span>
-        </div>
-
         <nav class="noctem-footer__nav">
           <a href="#about" class="noctem-footer__link orange-line-hover">Nosotros</a>
           <a href="#plans" class="noctem-footer__link orange-line-hover">Planes</a>
@@ -34,6 +28,10 @@
           Islas Baleares
         </span>
       </div>
+
+      <div class="noctem-footer__logo-peek" aria-hidden="true">
+        <img src="/assets/images/4x/Recurso 1IDENTIDAD_NOCTEM.png" alt="" />
+      </div>
     </div>
   </footer>
 </template>
@@ -45,11 +43,12 @@ const currentYear = new Date().getFullYear()
 <style lang="scss" scoped>
 .noctem-footer {
   position: relative;
-  padding: 3rem 0;
+  padding: 3rem 0 0;
+  overflow: hidden;
   background-color: var(--color-black-deep);
 
   @media (min-width: 1024px) {
-    padding: 4rem 0;
+    padding: 4rem 0 0;
   }
 
   &::before {
@@ -60,6 +59,20 @@ const currentYear = new Date().getFullYear()
     width: 100%;
     height: 1px;
     background: linear-gradient(90deg, transparent, var(--color-black-border), transparent);
+  }
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    height: 30%;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    mask-image: linear-gradient(to top, black 0%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to top, black 0%, transparent 100%);
+    pointer-events: none;
+    z-index: 1;
   }
 
   &__container {
@@ -83,18 +96,6 @@ const currentYear = new Date().getFullYear()
       flex-direction: row;
       align-items: center;
     }
-  }
-
-  &__brand {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-  }
-
-  &__logo {
-    font-family: var(--font-display);
-    font-size: 1.5rem;
-    color: var(--color-cream);
   }
 
   &__kanji {
@@ -191,6 +192,17 @@ const currentYear = new Date().getFullYear()
     font-family: var(--font-body);
     font-size: 0.75rem;
     color: rgba(138, 130, 121, 0.5);
+  }
+
+  &__logo-peek {
+    margin-top: -5rem;
+    overflow: hidden;
+
+    img {
+      display: block;
+      width: 100%;
+      transform: translateY(45%);
+    }
   }
 }
 </style>
