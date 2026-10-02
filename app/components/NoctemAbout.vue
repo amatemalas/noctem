@@ -16,19 +16,19 @@
             <div v-for="(paragraph, i) in aboutParagraphs" :key="i" v-html="paragraph" />
           </div>
 
-          <div class="noctem-about__stats" data-aos="fade-up" data-aos-delay="600">
+          <div ref="statsRef" class="noctem-about__stats" data-aos="fade-up" data-aos-delay="600">
             <div class="noctem-about__stat">
-              <span class="noctem-about__stat-number">{{ content?.stats_years || '8+' }}</span>
+              <span class="noctem-about__stat-number">{{ displayYears }}</span>
               <span class="noctem-about__stat-label">Años</span>
             </div>
             <div class="noctem-about__stat-divider" />
             <div class="noctem-about__stat">
-              <span class="noctem-about__stat-number">{{ content?.stats_projects || '200+' }}</span>
+              <span class="noctem-about__stat-number">{{ displayProjects }}</span>
               <span class="noctem-about__stat-label">Proyectos</span>
             </div>
             <div class="noctem-about__stat-divider" />
             <div class="noctem-about__stat">
-              <span class="noctem-about__stat-number">{{ content?.stats_island || '100+' }}</span>
+              <span class="noctem-about__stat-number">{{ displayIsland }}</span>
               <span class="noctem-about__stat-label">Clientes</span>
             </div>
           </div>
@@ -92,6 +92,35 @@ const aboutParagraphs = computed(() => {
   return desc.split('\n\n').filter(Boolean)
 })
 
+const statsRef = ref<HTMLElement>()
+const displayYears = ref('0')
+const displayProjects = ref('0')
+const displayIsland = ref('0')
+
+function parseStat(value: string | undefined, fallback: string) {
+  const raw = value || fallback
+  const match = raw.match(/^(\d+)(.*)$/)
+  if (!match) return { target: 0, suffix: '' }
+  return { target: parseInt(match[1], 10), suffix: match[2] }
+}
+
+function animateStat(target: number, suffix: string, setter: (v: string) => void, delay: number) {
+  const duration = 1800
+  const start = performance.now() + delay
+  function frame(now: number) {
+    const elapsed = now - start
+    if (elapsed < 0) {
+      requestAnimationFrame(frame)
+      return
+    }
+    const progress = Math.min(elapsed / duration, 1)
+    const eased = 1 - Math.pow(1 - progress, 3)
+    setter(Math.round(target * eased) + suffix)
+    if (progress < 1) requestAnimationFrame(frame)
+  }
+  requestAnimationFrame(frame)
+}
+
 const activeIndex = ref(0)
 let intervalId: ReturnType<typeof setInterval> | undefined
 
@@ -117,6 +146,20 @@ function resetInterval() {
 
 onMounted(() => {
   startInterval()
+
+  const observer = new IntersectionObserver((entries) => {
+    if (entries.some(e => e.isIntersecting)) {
+      const years = parseStat(props.content?.stats_years, '8+')
+      const projects = parseStat(props.content?.stats_projects, '200+')
+      const island = parseStat(props.content?.stats_island, '100+')
+      animateStat(years.target, years.suffix, v => displayYears.value = v, 0)
+      animateStat(projects.target, projects.suffix, v => displayProjects.value = v, 150)
+      animateStat(island.target, island.suffix, v => displayIsland.value = v, 300)
+      observer.disconnect()
+    }
+  }, { threshold: 0.4 })
+
+  if (statsRef.value) observer.observe(statsRef.value)
 })
 
 onUnmounted(() => {
