@@ -195,13 +195,17 @@ const currentYear = new Date().getFullYear()
   }
 
   &__logo-peek {
-    margin-top: -5rem;
+    margin-top: -1.5rem;
     overflow: hidden;
 
     img {
       display: block;
       width: 100%;
       transform: translateY(45%);
+    }
+
+    @media (min-width: 1024px) {
+      margin-top: -5rem;
     }
   }
 }
